@@ -22,12 +22,13 @@ type DemoState = {
 }
 
 const STORAGE_KEY = 'lunarhue.store.react-basic'
-
-const DemoStore = createStore<DemoState>({
+const DEMO_INITIAL_STATE: DemoState = {
   count: 0,
   draft: '',
   items: [],
-})
+}
+
+const DemoStore = createStore<DemoState>(DEMO_INITIAL_STATE)
   .extend(
     actions(({ setState }) => ({
       increment() {
@@ -92,7 +93,11 @@ function formatPersistLabel(lastPersistedAt: number | null) {
   return new Date(lastPersistedAt).toLocaleTimeString()
 }
 
-function RenderBadge(props: { name: string }) {
+interface RenderBadgeProps {
+  name: string
+}
+
+function RenderBadge(props: RenderBadgeProps) {
   const renders = useRef(0)
   renders.current += 1
 
@@ -112,7 +117,7 @@ function RenderBadge(props: { name: string }) {
       }}
     >
       <span>{props.name}</span>
-      <strong>{renders.current}</strong>
+      <strong>{renders.current}x</strong>
     </div>
   )
 }
@@ -131,8 +136,10 @@ function CountPanel() {
         padding: 24,
       }}
     >
-      <RenderBadge name="Count selector" />
-      <p style={{ margin: '18px 0 0', opacity: 0.7, textTransform: 'uppercase' }}>
+      <RenderBadge name="Count panel renders: " />
+      <p
+        style={{ margin: '18px 0 0', opacity: 0.7, textTransform: 'uppercase' }}
+      >
         Count
       </p>
       <p style={{ margin: '12px 0', fontSize: 56, lineHeight: 1 }}>{count}</p>
@@ -157,7 +164,6 @@ function CountPanel() {
 
 function PersistMetaPanel() {
   const store = useStore(DemoStore)
-  const draft = useSelector(store, (state) => state.draft)
   const { isHydrated, flush } = usePersistentStore(store, {
     key: STORAGE_KEY,
     delay: 400,
@@ -176,12 +182,27 @@ function PersistMetaPanel() {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
     },
   })
+
   const persistMeta = usePersistSelector(store, (meta) => meta)
+
+  const resetDemo = async (): Promise<void> => {
+    window.localStorage.removeItem(STORAGE_KEY)
+    await store.hydrate(DEMO_INITIAL_STATE)
+    store.persist.metaStore.setState(() => ({
+      isHydrated: true,
+      pending: false,
+      persisting: false,
+      lastPersistedAt: null,
+      error: null,
+    }))
+  }
 
   return (
     <article style={panelSurface}>
-      <RenderBadge name="Persist selectors" />
-      <p style={{ margin: '18px 0 0', opacity: 0.7, textTransform: 'uppercase' }}>
+      <RenderBadge name="Persist panel renders: " />
+      <p
+        style={{ margin: '18px 0 0', opacity: 0.7, textTransform: 'uppercase' }}
+      >
         Persist meta
       </p>
       <dl
@@ -235,24 +256,44 @@ function PersistMetaPanel() {
           </dd>
         </div>
       </dl>
-      <button
-        onClick={() => {
-          void flush()
-        }}
-        style={{
-          marginTop: 18,
-          borderRadius: 999,
-          border: '1px solid rgba(19, 33, 47, 0.14)',
-          background: '#fff',
-          color: '#13212f',
-          cursor: 'pointer',
-          fontSize: 14,
-          fontWeight: 700,
-          padding: '10px 16px',
-        }}
-      >
-        Flush now
-      </button>
+      <div style={{ display: 'flex', gap: 12 }}>
+        <button
+          onClick={() => {
+            void flush()
+          }}
+          style={{
+            marginTop: 18,
+            borderRadius: 999,
+            border: '1px solid rgba(19, 33, 47, 0.14)',
+            background: '#fff',
+            color: '#13212f',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 700,
+            padding: '10px 16px',
+          }}
+        >
+          Flush now
+        </button>
+        <button
+          onClick={() => {
+            void resetDemo()
+          }}
+          style={{
+            marginTop: 18,
+            borderRadius: 999,
+            border: '1px solid rgba(19, 33, 47, 0.14)',
+            background: '#13212f',
+            color: '#fff8ec',
+            cursor: 'pointer',
+            fontSize: 14,
+            fontWeight: 700,
+            padding: '10px 16px',
+          }}
+        >
+          Reset demo
+        </button>
+      </div>
       <p
         style={{
           margin: '16px 0 0',
@@ -283,7 +324,7 @@ function DraftComposer() {
       }}
     >
       <div style={{ flex: '1 1 100%', marginBottom: 4 }}>
-        <RenderBadge name="Draft selector" />
+        <RenderBadge name="Draft input renders: " />
       </div>
       <input
         value={draft}
@@ -324,7 +365,7 @@ function ItemsList() {
 
   return (
     <>
-      <RenderBadge name="Items selector" />
+      <RenderBadge name="Items list renders: " />
       <ul
         style={{
           listStyle: 'none',
