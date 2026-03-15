@@ -23,9 +23,11 @@ export type StorePlugin<TState, TPlugins, TNextPlugins> = (
   context: StorePluginContext<TState, TPlugins>,
 ) => TNextPlugins
 
-export type StoreDefinition<TState, TPlugins = {}> = {
+export type StoreFactory<TState, TPlugins = {}> = {
   create(): StoreInstance<TState, TPlugins>
   extend<TNextPlugins>(
     plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
-  ): StoreDefinition<TState, TPlugins & TNextPlugins>
+  ): StoreFactory<TState, TPlugins & TNextPlugins>
 }
+
+export type StoreDefinition<TState, TPlugins = {}> = StoreFactory<TState, TPlugins>

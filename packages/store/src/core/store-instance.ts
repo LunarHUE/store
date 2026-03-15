@@ -1,10 +1,8 @@
 import { createStore as createTanStackStore } from '@tanstack/store'
 
 import type {
-  Updater,
   StoreCleanup,
   StoreInstance,
-  StoreSubscription,
 } from './types'
 
 type StoreInstanceController<TState> = {
@@ -20,9 +18,12 @@ export function createStoreInstance<TState>(
   const cleanups: StoreCleanup[] = []
   let disposePromise: Promise<void> | null = null
 
-  const instance: StoreInstance<TState> = {
-    ...store,
-    dispose: async () => {
+  const instance = store as StoreInstance<TState>
+
+  Object.defineProperty(instance, 'dispose', {
+    configurable: true,
+    enumerable: true,
+    value: async () => {
       if (disposePromise) {
         return disposePromise
       }
@@ -35,7 +36,7 @@ export function createStoreInstance<TState>(
 
       return disposePromise
     },
-  }
+  })
 
   return {
     store: instance,

@@ -1,6 +1,6 @@
 import { expectType } from 'tsd'
 
-import { createStore } from '../../dist/core/index.js'
+import { createStore, type StoreFactory } from '../../dist/core/index.js'
 
 const definition = createStore({ count: 0 }).extend(() => ({
   pluginValue: 'ok' as const,
@@ -8,5 +8,13 @@ const definition = createStore({ count: 0 }).extend(() => ({
 
 const store = definition.create()
 
+expectType<StoreFactory<{ count: number }, { pluginValue: 'ok' }>>(definition)
 expectType<number>(store.get().count)
 expectType<'ok'>(store.pluginValue)
+
+createStore(0).extend(({ store }) => {
+  store.setState((prev) => prev + 1)
+  store.setState(() => 1)
+
+  return {}
+})

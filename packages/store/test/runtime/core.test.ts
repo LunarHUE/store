@@ -20,9 +20,9 @@ describe('core store', () => {
 
     const subscription = store.subscribe(listener)
 
-    store.setState({ count: 2 })
+    store.setState(() => ({ count: 2 }))
     subscription.unsubscribe()
-    store.setState({ count: 3 })
+    store.setState(() => ({ count: 3 }))
 
     expect(listener).toHaveBeenCalledTimes(1)
     expect(listener).toHaveBeenCalledWith({ count: 2 })
@@ -39,6 +39,28 @@ describe('core store', () => {
 
     expect(store.first).toBe('first')
     expect(store.second).toBe('first-second')
+  })
+
+  it('lets plugins update state through the store instance', () => {
+    const definition = createStore(0).extend(({ store }) => ({
+      increment() {
+        store.setState((prev) => prev + 1)
+      },
+      reset() {
+        store.setState(() => 1)
+      },
+    }))
+
+    const store = definition.create()
+
+    store.increment()
+    expect(store.get()).toBe(1)
+
+    store.increment()
+    expect(store.get()).toBe(2)
+
+    store.reset()
+    expect(store.get()).toBe(1)
   })
 
   it('runs dispose handlers in reverse registration order and only once', async () => {

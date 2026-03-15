@@ -1,10 +1,10 @@
 export type {
   StoreBrand,
   StoreCleanup,
+  StoreFactory,
   StoreDefinition,
   StoreInstance,
   StorePlugin,
   StorePluginContext,
   StoreSubscription,
-  SetStateUpdater,
 } from './types'
