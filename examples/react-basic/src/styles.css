@@ -1,0 +1,54 @@
+@import '@fontsource-variable/newsreader';
+@import '@fontsource-variable/public-sans';
+@import 'tailwindcss';
+
+:root {
+  --accent: #8f5b2f;
+  --border: rgba(45, 51, 56, 0.12);
+  --strong: rgba(45, 51, 56, 0.22);
+  --ink: #1f2d38;
+  --muted: #272727;
+  --page: #f2eee6;
+  --panel: rgba(251, 248, 242, 0.94);
+  --panel-soft: #eee7db;
+  --paper: #fffdf8;
+  --font-body: 'Public Sans Variable', sans-serif;
+  --font-display: 'Newsreader Variable', serif;
+}
+
+@theme inline {
+  --font-sans: var(--font-body);
+  --font-serif: var(--font-display);
+  --color-accent: var(--accent);
+  --color-border: var(--border);
+  --color-strong: var(--strong);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-page: var(--page);
+  --color-panel: var(--panel);
+  --color-panel-soft: var(--panel-soft);
+  --color-paper: var(--paper);
+}
+
+html {
+  background: var(--color-page);
+}
+
+body {
+  min-height: 100vh;
+  background: var(--color-page);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  text-rendering: optimizeLegibility;
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(143, 91, 47, 0.18);
+}
