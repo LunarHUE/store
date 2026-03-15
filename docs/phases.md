@@ -11,7 +11,7 @@ The prototype was delivered in small issue-scoped branches that merged into the 
    Added the builder/runtime split, plugin extension, and disposal model on top of `@tanstack/store`.
 
 3. React bindings
-   Added `createStoreContext`, `useStore`, and `useSelector`.
+   Added the React binding layer, which later evolved into `StoreProvider`, `useStore`, `useLocalStore`, `useSelector`, and `useStoreSelector`.
 
 4. Actions plugin
    Added the typed `actions(...)` plugin and `useActions(store)`.
