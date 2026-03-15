@@ -4,5 +4,5 @@
     "rootDir": ".",
     "baseUrl": "."
   },
-  "include": ["src", "test"]
+  "include": ["src", "__tests__"]
 }

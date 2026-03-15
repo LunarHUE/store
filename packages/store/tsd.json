@@ -1,9 +1,0 @@
-{
-  "directory": "test/types",
-  "compilerOptions": {
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "target": "ES2022",
-    "jsx": "react-jsx"
-  }
-}
