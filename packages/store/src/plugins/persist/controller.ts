@@ -201,7 +201,7 @@ export function createPersistController<TState>(
             : transition.nextState
 
           await runtimeOptions.onPersist({
-            key: runtimeOptions.key,
+            key: resolveKey(runtimeOptions.key),
             previousState: transition.previousState,
             nextState,
           })
