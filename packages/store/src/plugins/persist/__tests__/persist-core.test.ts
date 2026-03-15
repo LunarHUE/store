@@ -34,7 +34,7 @@ describe('persist core', () => {
       key: 'demo',
       delay: 50,
       onPersist,
-      ready: true,
+      enabled: true,
     })
 
     store.setState(() => ({ count: 1 }))
@@ -68,7 +68,7 @@ describe('persist core', () => {
     store.persist[persistControllerKey].connect(store, {
       key: 'flush',
       onPersist,
-      ready: true,
+      enabled: true,
     })
 
     store.setState(() => ({ count: 1 }))
@@ -95,7 +95,7 @@ describe('persist core', () => {
     store.persist[persistControllerKey].connect(store, {
       key: 'dispose',
       onPersist,
-      ready: true,
+      enabled: true,
     })
 
     store.setState(() => ({ count: 1 }))
@@ -114,7 +114,7 @@ describe('persist core', () => {
       onPersist: async () => {
         throw failure
       },
-      ready: true,
+      enabled: true,
     })
 
     store.setState(() => ({ count: 1 }))
@@ -171,9 +171,11 @@ describe('persist core', () => {
   })
 
   it('uses declaration-time hydrate defaults when runtime hydrate is omitted', async () => {
-    const hydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
-      await runtimeStore.hydrate({ count: 9 })
-    })
+    const hydrate = vi.fn(
+      async (runtimeStore: PersistedStore<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 9 })
+      },
+    )
     const builder = createStore({ count: 0 }).extend(
       persist({
         hydrate,
@@ -194,9 +196,11 @@ describe('persist core', () => {
 
   it('prefers runtime hydrate over declaration-time defaults', async () => {
     const defaultHydrate = vi.fn(async () => {})
-    const runtimeHydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
-      await runtimeStore.hydrate({ count: 7 })
-    })
+    const runtimeHydrate = vi.fn(
+      async (runtimeStore: PersistedStore<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 7 })
+      },
+    )
     const builder = createStore({ count: 0 }).extend(
       persist({
         hydrate: defaultHydrate,
@@ -263,5 +267,70 @@ describe('persist core', () => {
     expect(controller.metaStore.get().isHydrated).toBe(true)
     expect(controller.metaStore.get().pending).toBe(false)
     expect(baseStore.get().count).toBe(3)
+  })
+
+  it('generates a stable fallback key when one is not provided', async () => {
+    const onPersist = vi.fn(
+      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+    )
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create()
+    const controller = store.persist[persistControllerKey]
+
+    const disconnect = controller.connect(store, {
+      enabled: true,
+      onPersist,
+    })
+
+    store.setState(() => ({ count: 1 }))
+    await store.persist.flush()
+    disconnect()
+
+    controller.connect(store, {
+      enabled: true,
+      onPersist,
+    })
+
+    store.setState(() => ({ count: 2 }))
+    await store.persist.flush()
+
+    expect(onPersist).toHaveBeenCalledTimes(2)
+
+    const firstCall = onPersist.mock.calls[0]
+    const secondCall = onPersist.mock.calls[1]
+
+    const firstKey = firstCall?.[0]?.key
+    const secondKey = secondCall?.[0]?.key
+
+    expect(firstKey).toBeTypeOf('string')
+    expect(firstKey).toBe(secondKey)
+  })
+
+  it('passes the resolved key to hydrate callbacks', async () => {
+    const hydrate = vi.fn(
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 6 })
+      },
+    )
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      enabled: true,
+      hydrate,
+      onPersist: async () => {},
+    })
+
+    await vi.waitFor(() => {
+      expect(hydrate).toHaveBeenCalledTimes(1)
+    })
+
+    const firstCall = hydrate.mock.calls[0]
+    const key = firstCall?.[0]?.key
+
+    expect(key).toBeTypeOf('string')
+    expect((store as PersistedStore<{ count: number }>).get().count).toBe(6)
   })
 })

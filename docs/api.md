@@ -14,7 +14,7 @@ Builder API:
 type StoreBuilder<TState, TPlugins = {}> = {
   create(): Store<TState, TPlugins>
   extend<TNextPlugins>(
-    plugin: StorePlugin<TState, TPlugins, TNextPlugins>
+    plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
 }
 ```
@@ -140,16 +140,15 @@ import {
 Plugin install:
 
 ```ts
-const SubmissionStore = createStore({})
-  .extend(
-    persist({
-      flushOnDispose: true,
-      delay: 500,
-      async onPersist({ key, nextState }) {
-        await saveByKey(key, nextState)
-      },
-    }),
-  )
+const SubmissionStore = createStore({}).extend(
+  persist({
+    flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      await saveByKey(key, nextState)
+    },
+  }),
+)
 ```
 
 Persist callbacks and debounce settings may be declared on `persist(...)` as
@@ -163,8 +162,9 @@ const store = useStore(SubmissionStore)
 
 const persistentStore = usePersistentStore(store, {
   key: 'submission',
-  ready: true,
-  async hydrate(runtimeStore) {
+  enabled: true,
+  delay: 500,
+  async hydrate({ store: runtimeStore }) {
     await runtimeStore.hydrate(initialState)
   },
 })

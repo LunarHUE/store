@@ -45,22 +45,23 @@ export function usePersistentStore<TState>(
       return
     }
 
-    await options.hydrate(runtimeStore)
-  })
+      await options.hydrate(args)
+    },
+  )
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {
       key: options.key,
-      ready: options.ready,
+      enabled: options.enabled,
       delay: options.delay,
       onPersist: options.onPersist
         ? (args) => onPersist(args)
         : undefined,
       hydrate: options.hydrate
-        ? (runtimeStore) => hydrate(runtimeStore)
+        ? (args) => hydrate(args)
         : undefined,
     })
-  }, [options.delay, options.key, options.ready, store, Boolean(options.hydrate)])
+  }, [options.delay, options.enabled, options.key, store, Boolean(options.hydrate)])
 
   return {
     store,

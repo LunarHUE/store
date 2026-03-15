@@ -33,7 +33,7 @@ export type PersistPluginOptions<TState> = {
   onPersist?: PersistPersistHandler<TState>
 }
 
-export type PersistRuntimeOptions<TState> = {
+export type PersistHydrateArgs<TState> = {
   key: string
   ready?: boolean
   delay?: number
@@ -43,7 +43,10 @@ export type PersistRuntimeOptions<TState> = {
 
 export type PersistController<TState> = {
   metaStore: Store<PersistMeta>
-  connect(store: PersistedStore<TState>, options: PersistRuntimeOptions<TState>): () => void
+  connect(
+    store: PersistedStore<TState>,
+    options: PersistRuntimeOptions<TState>,
+  ): () => void
   flush(): Promise<void>
   hydrate(nextState: TState): Promise<void>
 }

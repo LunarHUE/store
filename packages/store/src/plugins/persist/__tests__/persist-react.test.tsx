@@ -20,16 +20,17 @@ describe('persist react bindings', () => {
     function Probe() {
       const persistentStore = usePersistentStore(store, {
         key: 'demo',
-        ready: true,
+        enabled: true,
         onPersist,
-        hydrate: async (runtimeStore) => {
+        hydrate: async ({ store: runtimeStore }) => {
           await runtimeStore.hydrate({ count: 2 })
         },
       })
 
       return (
         <span>
-          {String(persistentStore.isHydrated)}:{persistentStore.meta.pending ? 'pending' : 'idle'}:
+          {String(persistentStore.isHydrated)}:
+          {persistentStore.meta.pending ? 'pending' : 'idle'}:
           {persistentStore.store.get().count}
         </span>
       )
@@ -42,30 +43,37 @@ describe('persist react bindings', () => {
     })
   })
 
-  it('gates hydration until the runtime is ready', async () => {
+  it('gates hydration until the runtime is enabled', async () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
-    const hydrate = vi.fn(async (runtimeStore: typeof store) => {
-      await runtimeStore.hydrate({ count: 5 })
-    })
+    const hydrate = vi.fn(
+      async ({ store: runtimeStore }: { store: typeof store }) => {
+        await runtimeStore.hydrate({ count: 5 })
+      },
+    )
 
-    function Probe(props: { ready: boolean }) {
+    function Probe(props: { enabled: boolean }) {
       const persistentStore = usePersistentStore(store, {
         key: 'ready-gate',
-        ready: props.ready,
+        enabled: props.enabled,
         onPersist: async () => {},
         hydrate,
       })
 
-      return <span>{String(persistentStore.isHydrated)}:{persistentStore.store.get().count}</span>
+      return (
+        <span>
+          {String(persistentStore.isHydrated)}:
+          {persistentStore.store.get().count}
+        </span>
+      )
     }
 
-    const view = render(<Probe ready={false} />)
+    const view = render(<Probe enabled={false} />)
 
     expect(screen.getByText('false:0')).toBeTruthy()
     expect(hydrate).not.toHaveBeenCalled()
 
-    view.rerender(<Probe ready />)
+    view.rerender(<Probe enabled />)
 
     await waitFor(() => {
       expect(screen.getByText('true:5')).toBeTruthy()
@@ -80,7 +88,7 @@ describe('persist react bindings', () => {
     function Probe() {
       usePersistentStore(store, {
         key: 'selector',
-        ready: true,
+        enabled: true,
         delay: 1000,
         onPersist: async () => {},
       })
@@ -118,7 +126,12 @@ describe('persist react bindings', () => {
         key: 'declared-defaults',
       })
 
-      return <span>{String(persistentStore.isHydrated)}:{persistentStore.store.get().count}</span>
+      return (
+        <span>
+          {String(persistentStore.isHydrated)}:
+          {persistentStore.store.get().count}
+        </span>
+      )
     }
 
     render(<Probe />)
@@ -140,9 +153,11 @@ describe('persist react bindings', () => {
     const defaultOnPersist = vi.fn(async () => {})
     const runtimeOnPersist = vi.fn(async () => {})
     const defaultHydrate = vi.fn(async () => {})
-    const runtimeHydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
-      await runtimeStore.hydrate({ count: 4 })
-    })
+    const runtimeHydrate = vi.fn(
+      async (runtimeStore: PersistedStore<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 4 })
+      },
+    )
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: defaultOnPersist,
@@ -187,7 +202,7 @@ describe('persist react bindings', () => {
     function Probe() {
       usePersistentStore(store, {
         key: 'unmount',
-        ready: true,
+        enabled: true,
         delay: 1000,
         onPersist,
       })
@@ -220,7 +235,7 @@ describe('persist react bindings', () => {
     function Probe() {
       usePersistentStore(store, {
         key: 'pagehide',
-        ready: true,
+        enabled: true,
         delay: 1000,
         onPersist,
       })
@@ -255,7 +270,7 @@ describe('persist react bindings', () => {
     function Probe() {
       usePersistentStore(store, {
         key: 'background',
-        ready: true,
+        enabled: true,
         delay: 1000,
         onPersist,
       })
@@ -281,5 +296,54 @@ describe('persist react bindings', () => {
       expect(store.persist.metaStore.get().pending).toBe(true)
     })
     expect(onPersist).not.toHaveBeenCalled()
+  })
+
+  it('passes the resolved key to runtime callbacks when the key is omitted', async () => {
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create()
+    const hydrate = vi.fn(
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 3 })
+      },
+    )
+    const onPersist = vi.fn(
+      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+    )
+
+    function Probe() {
+      usePersistentStore(store, {
+        enabled: true,
+        hydrate,
+        onPersist,
+      })
+
+      return <span>{store.get().count}</span>
+    }
+
+    render(<Probe />)
+
+    await waitFor(() => {
+      expect(hydrate).toHaveBeenCalledTimes(1)
+      expect(screen.getByText('3')).toBeTruthy()
+    })
+
+    act(() => {
+      store.setState(() => ({ count: 4 }))
+    })
+
+    await waitFor(() => {
+      expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+
+    const hydrateCall = hydrate.mock.calls[0]
+    const persistCall = onPersist.mock.calls[0]
+
+    const hydrateKey = hydrateCall?.[0]?.key
+    const persistKey = persistCall?.[0]?.key
+
+    expect(hydrateKey).toBeTypeOf('string')
+    expect(hydrateKey).toBe(persistKey)
   })
 })
