@@ -42,6 +42,7 @@ export function createPersistController<TState>(
   let currentKey: string | null = null
   let currentFlushPromise: Promise<void> | null = null
   let hydrating = false
+  let isConnected = false
   let hasRequestedHydrationForKey = false
 
   const clearTimer = () => {
@@ -75,7 +76,12 @@ export function createPersistController<TState>(
       const previousState = lastObservedState
       lastObservedState = nextState
 
-      if (hydrating || !runtimeOptions?.ready || Object.is(previousState, nextState)) {
+      if (
+        hydrating ||
+        !isConnected ||
+        !runtimeOptions?.ready ||
+        Object.is(previousState, nextState)
+      ) {
         return
       }
 
@@ -205,20 +211,19 @@ export function createPersistController<TState>(
         resetForKey(runtimeOptions.key)
       }
 
+      isConnected = true
       ensureSubscription()
-      void maybeHydrate(runtimeStore, runtimeOptions)
+      void maybeHydrate(runtimeStore, runtimeOptions).catch(() => {})
 
       return () => {
         if (runtimeOptions?.key !== options.key) {
           return
         }
 
-        runtimeOptions = null
+        isConnected = false
         clearTimer()
-        queuedTransition = null
         updateMeta((prev) => ({
           ...prev,
-          pending: false,
           persisting: false,
         }))
       }
