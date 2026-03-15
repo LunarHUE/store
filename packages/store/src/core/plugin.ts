@@ -1,11 +1,10 @@
-export { createStore } from './create-store'
 export type {
   Store,
   StoreBrand,
   StoreBuilder,
   StoreCleanup,
-  StoreDefinition,
   StoreFactory,
+  StoreDefinition,
   StoreInstance,
   StorePlugin,
   StorePluginContext,
