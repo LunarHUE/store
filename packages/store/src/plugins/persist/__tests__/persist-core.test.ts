@@ -4,7 +4,11 @@ import { createStore } from '../../../core'
 
 import { createPersistController } from '../controller'
 import { persist } from '../plugin'
-import type { PersistedStore } from '../types'
+import type {
+  PersistedStore,
+  PersistHydrateArgs,
+  PersistPersistArgs,
+} from '../types'
 import { persistControllerKey } from '../types'
 
 describe('persist core', () => {
@@ -172,7 +176,9 @@ describe('persist core', () => {
 
   it('uses declaration-time hydrate defaults when runtime hydrate is omitted', async () => {
     const hydrate = vi.fn(
-      async (runtimeStore: PersistedStore<{ count: number }>) => {
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
         await runtimeStore.hydrate({ count: 9 })
       },
     )
@@ -197,7 +203,9 @@ describe('persist core', () => {
   it('prefers runtime hydrate over declaration-time defaults', async () => {
     const defaultHydrate = vi.fn(async () => {})
     const runtimeHydrate = vi.fn(
-      async (runtimeStore: PersistedStore<{ count: number }>) => {
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
         await runtimeStore.hydrate({ count: 7 })
       },
     )
@@ -211,7 +219,7 @@ describe('persist core', () => {
 
     store.persist[persistControllerKey].connect(store, {
       key: 'override-hydrate',
-      hydrate: runtimeHydrate,
+      hydrate: (args) => runtimeHydrate(args),
     })
 
     await vi.waitFor(() => {
@@ -334,7 +342,7 @@ describe('persist core', () => {
     const defaultHydrate = vi.fn(async () => {})
     const runtimeHydrate = vi.fn(
       async (args: PersistHydrateArgs<{ count: number }>) => {
-        await runtimeStore.hydrate({ count: 7 })
+        await args.store.hydrate({ count: 7 })
       },
     )
     const builder = createStore({ count: 0 }).extend(
@@ -396,7 +404,7 @@ describe('persist core', () => {
 
   it('generates a stable fallback key when one is not provided', async () => {
     const onPersist = vi.fn(
-      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {},
     )
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
