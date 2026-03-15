@@ -1,7 +1,7 @@
 import { createStore as createTanStackStore } from '@tanstack/store'
 
 import type {
-  SetStateUpdater,
+  Updater,
   StoreCleanup,
   StoreInstance,
   StoreSubscription,
@@ -21,24 +21,8 @@ export function createStoreInstance<TState>(
   let disposePromise: Promise<void> | null = null
 
   const instance: StoreInstance<TState> = {
-    get state() {
-      return store.state
-    },
-    get() {
-      return store.get()
-    },
-    setState(updater: SetStateUpdater<TState>) {
-      if (typeof updater === 'function') {
-        store.setState(updater as (prev: TState) => TState)
-        return
-      }
-
-      store.setState(() => updater)
-    },
-    subscribe(listener: (state: TState) => void): StoreSubscription {
-      return store.subscribe(listener)
-    },
-    async dispose() {
+    ...store,
+    dispose: async () => {
       if (disposePromise) {
         return disposePromise
       }

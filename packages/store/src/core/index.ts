@@ -1,6 +1,5 @@
 export { createStore } from './create-store'
 export type {
-  SetStateUpdater,
   StoreBrand,
   StoreCleanup,
   StoreDefinition,

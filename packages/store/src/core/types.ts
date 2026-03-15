@@ -1,4 +1,4 @@
-export type SetStateUpdater<TState> = TState | ((prev: TState) => TState)
+import type { Store } from '@tanstack/store'
 
 export type StoreBrand<TKey extends symbol> = {
   readonly [K in TKey]: true
@@ -10,19 +10,12 @@ export type StoreSubscription = {
 
 export type StoreCleanup = () => void | Promise<void>
 
-export type StoreInstance<TState, TPlugins = {}> = {
-  readonly state: TState
-  get(): TState
-  setState(updater: SetStateUpdater<TState>): void
-  subscribe(listener: (state: TState) => void): StoreSubscription
+export type StoreInstance<TState, TPlugins = {}> = Store<TState> & {
   dispose(): Promise<void>
 } & TPlugins
 
 export type StorePluginContext<TState, TPlugins> = {
   store: StoreInstance<TState, TPlugins>
-  getState(): TState
-  setState(updater: SetStateUpdater<TState>): void
-  subscribe(listener: (state: TState) => void): StoreSubscription
   onDispose(cleanup: StoreCleanup): void
 }
 
