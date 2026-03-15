@@ -1,10 +1,20 @@
 # `@lunarhue/store`
 
+[![npm version](https://img.shields.io/npm/v/@lunarhue/store)](https://www.npmjs.com/package/@lunarhue/store)
+
 Framework-agnostic state built on top of `@tanstack/store`, with
 plugin composition, selector-first React bindings, and plugin-owned React APIs.
 
 This repo is a Bun workspace. The publishable package lives in
 `packages/store`.
+
+## Install
+
+Package: <https://www.npmjs.com/package/@lunarhue/store>
+
+```sh
+npm install @lunarhue/store
+```
 
 ## Public entrypoints
 

@@ -5,6 +5,8 @@ composition and React bindings.
 
 ## Install
 
+Package: <https://www.npmjs.com/package/@lunarhue/store>
+
 ```sh
 npm install @lunarhue/store
 ```
