@@ -221,15 +221,18 @@ import {
 } from '@lunarhue/store/plugins/persist'
 
 function DraftScreen() {
-  const { isHydrated, flush } = usePersistentStore(DraftStore)
-  const pending = usePersistSelector(DraftStore, (meta) => meta.pending)
+  const store = useStore(DraftStore)
+  const { flush } = usePersistentStore(DraftStore)
+  const persistMeta = usePersistSelector(DraftStore, (meta) => meta)
 
   return (
-    <div>
-      <span>Hydrated: {String(isHydrated)}</span>
-      <span>Pending: {String(pending)}</span>
-      <button onClick={() => void flush()}>Flush</button>
-    </div>
+    <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>
+      <div>
+        <span>Hydrated: {String(persistMeta.isHydrated)}</span>
+        <span>Pending: {String(persistMeta.pending)}</span>
+        <button onClick={() => void flush()}>Flush</button>
+      </div>
+    </PersistenceBoundary>
   )
 }
 

@@ -182,9 +182,8 @@ function CountPanel() {
 
 function PersistMetaPanel() {
   const store = useStore(DemoStore)
-  const { isHydrated, flush } = usePersistentStore(DemoStore)
+  const { flush } = usePersistentStore(DemoStore)
   const persistMeta = usePersistSelector(DemoStore, (meta) => meta)
-
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
     await store.hydrate(DEMO_INITIAL_STATE)
@@ -221,7 +220,7 @@ function PersistMetaPanel() {
           }}
         >
           <dt>Hydrated</dt>
-          <dd style={{ margin: 0 }}>{String(isHydrated)}</dd>
+          <dd style={{ margin: 0 }}>{String(persistMeta.isHydrated)}</dd>
         </div>
         <div
           style={{

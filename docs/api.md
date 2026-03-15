@@ -195,7 +195,6 @@ Boundary:
 
 - `store`
 - `meta`
-- `isHydrated`
 - `flush()`
 
 `PersistenceBoundary` is still exported as a compatibility escape hatch when

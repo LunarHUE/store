@@ -24,7 +24,6 @@ import {
 export type PersistentStoreResult<TState, TPlugins = {}> = {
   store: PersistedStore<TState, TPlugins>
   meta: PersistMeta
-  isHydrated: boolean
   flush(): Promise<void>
 }
 
@@ -137,7 +136,6 @@ function usePersistentRuntime<TState, TPlugins = {}>(
   return {
     store,
     meta,
-    isHydrated: meta.isHydrated,
     flush() {
       return store.persist.flush()
     },
