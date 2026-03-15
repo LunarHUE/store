@@ -1,5 +1,5 @@
-import { act, render, screen, within } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, cleanup, render, screen, within } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createStore, type StorePlugin } from '../src/core'
 import {
@@ -11,6 +11,10 @@ import {
 } from '../src/react'
 
 describe('react bindings', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('reads a builder-owned provider-scoped store instance', () => {
     const builder = createStore({ count: 0 })
 
@@ -79,7 +83,9 @@ describe('react bindings', () => {
       return null
     }
 
-    expect(() => render(<Probe />)).toThrow(/useStore\(builder\) requires a matching/)
+    expect(() => render(<Probe />)).toThrow(
+      /useStore\(builder\) requires a matching/,
+    )
   })
 
   it('creates a local store instance explicitly', () => {
