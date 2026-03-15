@@ -105,9 +105,10 @@ The core plugin owns:
 
 The React plugin layer owns:
 
-- `usePersistentStore(store, options)`
-- `usePersistSelector(store, selector, compare?)`
-- `PersistenceBoundary`
+- `PersistStoreProvider`
+- `usePersistentStore(builder)`
+- `usePersistSelector(builder, selector, compare?)`
+- `PersistenceBoundary` as a compatibility escape hatch
 
 On web:
 

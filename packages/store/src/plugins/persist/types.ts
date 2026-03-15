@@ -13,27 +13,37 @@ export type PersistMeta = {
   error: unknown | null
 }
 
+export type PersistHydrateArgs<TState> = {
+  key: string
+  store: PersistedStore<TState>
+}
+
+export type PersistPersistArgs<TState> = {
+  key: string
+  previousState: TState
+  nextState: TState
+}
+
+export type PersistRuntimeOptions<TState> = {
+  key?: string
+  enabled?: boolean
+  delay?: number
+  hydrate?: (args: PersistHydrateArgs<TState>) => Promise<void>
+  onPersist?: (args: PersistPersistArgs<TState>) => Promise<void>
+}
+
 export type PersistPluginOptions<TState> = {
   flushOnDispose?: boolean
   hydratedOnCreate?: boolean
   serializeState?: (state: TState) => TState
-}
-
-export type PersistRuntimeOptions<TState> = {
-  key: string
-  ready?: boolean
-  delay?: number
-  hydrate?: (store: PersistedStore<TState>) => Promise<void>
-  onPersist: (args: {
-    key: string
-    previousState: TState
-    nextState: TState
-  }) => Promise<void>
-}
+} & Omit<PersistRuntimeOptions<TState>, 'key'>
 
 export type PersistController<TState> = {
-  metaStore: Store<PersistMeta>
-  connect(store: PersistedStore<TState>, options: PersistRuntimeOptions<TState>): () => void
+  meta: Store<PersistMeta>
+  connect(
+    store: PersistedStore<TState>,
+    options: PersistRuntimeOptions<TState>,
+  ): () => void
   flush(): Promise<void>
   hydrate(nextState: TState): Promise<void>
 }
@@ -43,7 +53,7 @@ export type PersistPluginSurface<TState> = PersistBrand & {
   persist: {
     flush(): Promise<void>
     hydrate(nextState: TState): Promise<void>
-    metaStore: Store<PersistMeta>
+    meta: Store<PersistMeta>
     [persistControllerKey]: PersistController<TState>
   }
 }

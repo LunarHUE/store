@@ -27,7 +27,7 @@ export function persist<TState>(
         hydrate(nextState: TState) {
           return controller.hydrate(nextState)
         },
-        metaStore: controller.metaStore,
+        meta: controller.meta,
         [persistControllerKey]: controller,
       },
     }

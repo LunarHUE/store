@@ -65,11 +65,7 @@ The generic React layer gives you:
 
 ```tsx
 import { createStore } from '@lunarhue/store/core'
-import {
-  StoreProvider,
-  useSelector,
-  useStore,
-} from '@lunarhue/store/react'
+import { StoreProvider, useSelector, useStore } from '@lunarhue/store/react'
 
 const CounterStore = createStore({ count: 0 })
 
@@ -187,10 +183,11 @@ The persist plugin adds:
 - `store.hydrate(...)`
 - `store.persist.flush()`
 - `store.persist.hydrate(...)`
-- `store.persist.metaStore`
-- `usePersistentStore(...)`
-- `usePersistSelector(...)`
-- `PersistenceBoundary`
+- `store.persist.meta`
+- `PersistStoreProvider`
+- `usePersistentStore(builder)`
+- `usePersistSelector(builder, selector)`
+- `PersistenceBoundary` as a compatibility escape hatch
 
 Store declaration:
 
@@ -203,51 +200,65 @@ const DraftStore = createStore({
 }).extend(
   persist({
     flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      window.localStorage.setItem(key, JSON.stringify(nextState))
+    },
   }),
 )
 ```
+
+Declaration-time persist callbacks act as defaults. Runtime wiring can override
+them when a specific screen or provider needs different behavior.
 
 React wiring:
 
 ```tsx
 import {
-  PersistenceBoundary,
+  PersistStoreProvider,
   usePersistentStore,
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
-import { useStore } from '@lunarhue/store/react'
 
 function DraftScreen() {
   const store = useStore(DraftStore)
-  const { isHydrated, flush } = usePersistentStore(store, {
-    key: 'draft',
-    ready: true,
-    delay: 500,
-    async hydrate(runtimeStore) {
-      const serialized = window.localStorage.getItem('draft')
-
-      if (!serialized) {
-        await runtimeStore.hydrate(runtimeStore.get())
-        return
-      }
-
-      await runtimeStore.hydrate(JSON.parse(serialized))
-    },
-    async onPersist({ nextState }) {
-      window.localStorage.setItem('draft', JSON.stringify(nextState))
-    },
-  })
-
-  const pending = usePersistSelector(store, (meta) => meta.pending)
+  const { flush } = usePersistentStore(DraftStore)
+  const persistMeta = usePersistSelector(DraftStore, (meta) => meta)
 
   return (
     <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>
       <div>
-        <span>Hydrated: {String(isHydrated)}</span>
-        <span>Pending: {String(pending)}</span>
+        <span>Hydrated: {String(persistMeta.isHydrated)}</span>
+        <span>Pending: {String(persistMeta.pending)}</span>
         <button onClick={() => void flush()}>Flush</button>
       </div>
     </PersistenceBoundary>
+  )
+}
+
+function App() {
+  return (
+    <PersistStoreProvider
+      builder={DraftStore}
+      flushOnUnmount
+      flushOnPageHide
+      persist={{
+        key: 'draft',
+        enabled: true,
+        async hydrate({ store: runtimeStore }) {
+          const serialized = window.localStorage.getItem('draft')
+
+          if (!serialized) {
+            await runtimeStore.hydrate(runtimeStore.get())
+            return
+          }
+
+          await runtimeStore.hydrate(JSON.parse(serialized))
+        },
+      }}
+    >
+      <DraftScreen />
+    </PersistStoreProvider>
   )
 }
 ```
@@ -256,6 +267,9 @@ On web:
 
 - `flushOnPageHide` is implemented
 - `flushOnBackground` is accepted but currently a no-op
+
+`PersistenceBoundary` still exists for compatibility when only a sub-tree should
+own flush behavior, but the provider is the default lifecycle API now.
 
 ## How plugins work
 
@@ -304,11 +318,9 @@ type LoggerSurface = {
   logSnapshot(): void
 }
 
-export function logger<TState>(label: string): StorePlugin<
-  TState,
-  any,
-  LoggerSurface
-> {
+export function logger<TState>(
+  label: string,
+): StorePlugin<TState, any, LoggerSurface> {
   return ({ store, onDispose }) => {
     const subscription = store.subscribe((state) => {
       console.log(label, state)

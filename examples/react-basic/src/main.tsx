@@ -8,16 +8,11 @@ import {
   useActions,
 } from '@lunarhue/store/plugins/actions'
 import {
-  PersistenceBoundary,
+  PersistStoreProvider,
   persist,
   usePersistentStore,
-  usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
-import {
-  StoreProvider,
-  useStore,
-  useStoreSelector,
-} from '@lunarhue/store/react'
+import { useSelector, useStore, useStoreSelector } from '@lunarhue/store/react'
 
 type DemoState = {
   count: number
@@ -83,6 +78,20 @@ const DemoStore = createStore<DemoState>(DEMO_INITIAL_STATE)
   .extend(
     persist({
       flushOnDispose: true,
+      delay: 400,
+      async hydrate({ store: runtimeStore }) {
+        const serialized = window.localStorage.getItem(STORAGE_KEY)
+
+        if (!serialized) {
+          await runtimeStore.hydrate(runtimeStore.get())
+          return
+        }
+
+        await runtimeStore.hydrate(JSON.parse(serialized) as DemoState)
+      },
+      async onPersist({ nextState }) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
+      },
     }),
   )
 
@@ -171,32 +180,14 @@ function CountPanel() {
 }
 
 function PersistMetaPanel() {
-  const store = useStore(DemoStore)
-  const { isHydrated, flush } = usePersistentStore(store, {
-    key: STORAGE_KEY,
-    delay: 400,
-    ready: true,
-    async hydrate(runtimeStore) {
-      const serialized = window.localStorage.getItem(STORAGE_KEY)
-
-      if (!serialized) {
-        await runtimeStore.hydrate(runtimeStore.get())
-        return
-      }
-
-      await runtimeStore.hydrate(JSON.parse(serialized) as DemoState)
-    },
-    async onPersist({ nextState }) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
-    },
-  })
-
-  const persistMeta = usePersistSelector(store, (meta) => meta)
+  const { flush, store } = usePersistentStore(DemoStore)
+  // Subscribe to the meta store
+  const persistMeta = useSelector(store.persist.meta, (meta) => meta)
 
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
     await store.hydrate(DEMO_INITIAL_STATE)
-    store.persist.metaStore.setState(() => ({
+    store.persist.meta.setState(() => ({
       isHydrated: true,
       pending: false,
       persisting: false,
@@ -229,7 +220,7 @@ function PersistMetaPanel() {
           }}
         >
           <dt>Hydrated</dt>
-          <dd style={{ margin: 0 }}>{String(isHydrated)}</dd>
+          <dd style={{ margin: 0 }}>{String(persistMeta.isHydrated)}</dd>
         </div>
         <div
           style={{
@@ -519,18 +510,14 @@ function ExampleScreen() {
 
 function App() {
   return (
-    <StoreProvider builder={DemoStore}>
-      {({ store }) => (
-        <PersistenceBoundary
-          store={store}
-          flushOnUnmount
-          flushOnPageHide
-          flushOnBackground
-        >
-          <ExampleScreen />
-        </PersistenceBoundary>
-      )}
-    </StoreProvider>
+    <PersistStoreProvider
+      builder={DemoStore}
+      flushOnUnmount
+      flushOnPageHide
+      flushOnBackground
+    >
+      <ExampleScreen />
+    </PersistStoreProvider>
   )
 }
 

@@ -1,25 +1,72 @@
 import {
+  createContext,
+  type Context,
   type ReactNode,
+  useContext,
   useEffect,
   useEffectEvent,
 } from 'react'
 
-import { useSelector } from '../../react'
+import type { StoreBuilder } from '../../core'
+import { getStoreBuilder } from '../../core/builder-registry'
+import { StoreProvider, useSelector } from '../../react'
 
 import {
   persistControllerKey,
+  type PersistHydrateArgs,
   type PersistMeta,
+  type PersistPersistArgs,
+  type PersistPluginSurface,
   type PersistRuntimeOptions,
   type PersistedStore,
 } from './types'
 
-export type PersistentStoreResult<TState> = {
-  store: PersistedStore<TState>
-  meta: PersistMeta
-  isHydrated: boolean
+export type PersistentStoreResult<TState, TPlugins = {}> = {
+  store: PersistedStore<TState, TPlugins>
   flush(): Promise<void>
 }
 
+type PersistStoreContext<TState, TPlugins> = Context<
+  PersistentStoreResult<TState, TPlugins> | undefined
+>
+
+const persistContextMap = new WeakMap<
+  StoreBuilder<any, any>,
+  PersistStoreContext<any, any>
+>()
+
+type PersistStoreProviderChildren<TState, TPlugins> =
+  | ReactNode
+  | ((args: PersistentStoreResult<TState, TPlugins>) => ReactNode)
+
+type BuilderPersistStoreProviderProps<TState, TPlugins> = {
+  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>
+  children?: PersistStoreProviderChildren<TState, TPlugins>
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+  persist?: PersistRuntimeOptions<TState>
+  store?: never
+}
+
+type ExternalPersistStoreProviderProps<TState, TPlugins> = {
+  builder?: never
+  children?: PersistStoreProviderChildren<TState, TPlugins>
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+  persist?: PersistRuntimeOptions<TState>
+  store: PersistedStore<TState, TPlugins>
+}
+
+export type PersistStoreProviderProps<TState, TPlugins = {}> =
+  | BuilderPersistStoreProviderProps<TState, TPlugins>
+  | ExternalPersistStoreProviderProps<TState, TPlugins>
+
+/**
+ * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
+ * as a compatibility escape hatch for sub-tree flush behavior.
+ */
 export type PersistenceBoundaryProps<TState> = {
   store: PersistedStore<TState>
   flushOnUnmount?: boolean
@@ -28,59 +75,94 @@ export type PersistenceBoundaryProps<TState> = {
   children?: ReactNode
 }
 
-export function usePersistentStore<TState>(
-  store: PersistedStore<TState>,
+type PersistenceBoundaryOptions = {
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+}
+
+function getPersistStoreContext<TState, TPlugins>(
+  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>,
+): PersistStoreContext<TState, TPlugins> {
+  let context = persistContextMap.get(builder)
+
+  if (!context) {
+    context = createContext<
+      PersistentStoreResult<TState, TPlugins> | undefined
+    >(undefined)
+    persistContextMap.set(builder, context)
+  }
+
+  return context
+}
+
+function usePersistentRuntime<TState, TPlugins = {}>(
+  store: PersistedStore<TState, TPlugins>,
   options: PersistRuntimeOptions<TState>,
-): PersistentStoreResult<TState> {
-  const meta = usePersistSelector(store, (currentMeta) => currentMeta)
-  const onPersist = useEffectEvent(options.onPersist)
-  const hydrate = useEffectEvent(async (runtimeStore: PersistedStore<TState>) => {
+): PersistentStoreResult<TState, TPlugins> {
+  const onPersist = useEffectEvent(async (args: PersistPersistArgs<TState>) => {
+    if (!options.onPersist) {
+      return
+    }
+
+    await options.onPersist(args)
+  })
+  const hydrate = useEffectEvent(async (args: PersistHydrateArgs<TState>) => {
     if (!options.hydrate) {
       return
     }
 
-    await options.hydrate(runtimeStore)
+    await options.hydrate(args)
   })
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {
       key: options.key,
-      ready: options.ready,
+      enabled: options.enabled,
       delay: options.delay,
-      onPersist(args) {
-        return onPersist(args)
-      },
-      hydrate: options.hydrate
-        ? (runtimeStore) => hydrate(runtimeStore)
-        : undefined,
+      onPersist: options.onPersist ? (args) => onPersist(args) : undefined,
+      hydrate: options.hydrate ? (args) => hydrate(args) : undefined,
     })
-  }, [options.delay, options.key, options.ready, store, Boolean(options.hydrate)])
+  }, [
+    options.delay,
+    options.enabled,
+    options.key,
+    store,
+    Boolean(options.hydrate),
+  ])
 
   return {
     store,
-    meta,
-    isHydrated: meta.isHydrated,
     flush() {
       return store.persist.flush()
     },
   }
 }
 
-export function usePersistSelector<TSelected>(
-  store: PersistedStore<any>,
-  selector: (meta: PersistMeta) => TSelected,
-  compare?: (a: TSelected, b: TSelected) => boolean,
-): TSelected {
-  return useSelector(store.persist.metaStore, selector, compare)
+export function usePersistentStore<TState, TPlugins>(
+  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>,
+): PersistentStoreResult<TState, TPlugins> {
+  const contextValue = useContext(
+    getPersistStoreContext<TState, TPlugins>(builder),
+  )
+
+  if (!contextValue) {
+    throw new Error(
+      'usePersistentStore(builder) requires a matching <PersistStoreProvider builder={...}> or <PersistStoreProvider store={...}> ancestor.',
+    )
+  }
+
+  return contextValue
 }
 
-export function PersistenceBoundary<TState>({
-  children,
-  flushOnBackground,
-  flushOnPageHide,
-  flushOnUnmount,
-  store,
-}: PersistenceBoundaryProps<TState>) {
+function usePersistenceBoundary<TState>(
+  store: PersistedStore<TState>,
+  {
+    flushOnBackground,
+    flushOnPageHide,
+    flushOnUnmount,
+  }: PersistenceBoundaryOptions,
+) {
   useEffect(() => {
     if (!flushOnUnmount) {
       return
@@ -114,6 +196,114 @@ export function PersistenceBoundary<TState>({
 
     // Web has no app background lifecycle equivalent here yet.
   }, [flushOnBackground])
+}
+
+interface PersistStoreProviderContentProps<TState, TPlugins> {
+  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>
+  children?: PersistStoreProviderChildren<TState, TPlugins>
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+  persist?: PersistRuntimeOptions<TState>
+  store: PersistedStore<TState, TPlugins>
+}
+
+function PersistStoreProviderContent<TState, TPlugins>({
+  builder,
+  flushOnBackground,
+  flushOnPageHide,
+  flushOnUnmount,
+  children,
+  persist,
+  store,
+}: PersistStoreProviderContentProps<TState, TPlugins>) {
+  const persistentStore = usePersistentRuntime<TState, TPlugins>(
+    store,
+    persist ?? {},
+  )
+  const Context = getPersistStoreContext<TState, TPlugins>(builder)
+
+  usePersistenceBoundary(store, {
+    flushOnBackground,
+    flushOnPageHide,
+    flushOnUnmount,
+  })
+
+  const content =
+    typeof children === 'function' ? children(persistentStore) : children
+
+  return <Context.Provider value={persistentStore}>{content}</Context.Provider>
+}
+
+export function PersistStoreProvider<TState, TPlugins = {}>(
+  props: PersistStoreProviderProps<TState, TPlugins>,
+) {
+  if (props.builder !== undefined) {
+    return (
+      <StoreProvider builder={props.builder}>
+        {({ store }) => (
+          <PersistStoreProviderContent
+            builder={props.builder}
+            store={store}
+            persist={props.persist}
+            flushOnUnmount={props.flushOnUnmount}
+            flushOnPageHide={props.flushOnPageHide}
+            flushOnBackground={props.flushOnBackground}
+          >
+            {props.children}
+          </PersistStoreProviderContent>
+        )}
+      </StoreProvider>
+    )
+  }
+
+  const builder = getStoreBuilder(props.store)
+
+  if (!builder) {
+    throw new Error(
+      'PersistStoreProvider could not resolve a builder for the provided store. Pass a persisted store created by @lunarhue/store.',
+    )
+  }
+
+  return (
+    <StoreProvider store={props.store}>
+      {({ store }) => (
+        <PersistStoreProviderContent
+          builder={
+            builder as StoreBuilder<
+              TState,
+              TPlugins & PersistPluginSurface<TState>
+            >
+          }
+          store={store as PersistedStore<TState, TPlugins>}
+          persist={props.persist}
+          flushOnUnmount={props.flushOnUnmount}
+          flushOnPageHide={props.flushOnPageHide}
+          flushOnBackground={props.flushOnBackground}
+        >
+          {props.children}
+        </PersistStoreProviderContent>
+      )}
+    </StoreProvider>
+  )
+}
+
+/**
+ * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
+ * as a compatibility escape hatch for sub-tree flush behavior.
+ */
+export function PersistenceBoundary<TState>({
+  children,
+  flushOnBackground,
+  flushOnPageHide,
+  flushOnUnmount,
+  store,
+}: PersistenceBoundaryProps<TState>) {
+  usePersistenceBoundary(store, {
+    flushOnBackground,
+    flushOnPageHide,
+    flushOnUnmount,
+  })
 
   return <>{children}</>
 }

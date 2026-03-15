@@ -14,7 +14,7 @@ Builder API:
 type StoreBuilder<TState, TPlugins = {}> = {
   create(): Store<TState, TPlugins>
   extend<TNextPlugins>(
-    plugin: StorePlugin<TState, TPlugins, TNextPlugins>
+    plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
 }
 ```
@@ -131,7 +131,7 @@ actions.increment()
 ```ts
 import {
   persist,
-  PersistenceBoundary,
+  PersistStoreProvider,
   usePersistentStore,
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
@@ -140,50 +140,63 @@ import {
 Plugin install:
 
 ```ts
-const SubmissionStore = createStore({})
-  .extend(persist({ flushOnDispose: true }))
+const SubmissionStore = createStore({}).extend(
+  persist({
+    flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      await saveByKey(key, nextState)
+    },
+  }),
+)
 ```
+
+Persist callbacks and debounce settings may be declared on `persist(...)` as
+defaults. Runtime config passed to `PersistStoreProvider` overrides those  
+defaults when present.
 
 React runtime wiring:
 
 ```ts
-const store = useStore(SubmissionStore)
-
-const persistentStore = usePersistentStore(store, {
-  key: 'submission',
-  ready: true,
-  delay: 500,
-  async hydrate(runtimeStore) {
-    await runtimeStore.hydrate(initialState)
-  },
-  async onPersist({ nextState }) {
-    await save(nextState)
-  },
-})
+const { store } = usePersistentStore(SubmissionStore)
+const pending = useSelector(store.persist.meta, (meta) => meta.pending)
 ```
 
-Meta selection:
-
-```ts
-const pending = usePersistSelector(store, (meta) => meta.pending)
+```tsx
+<PersistStoreProvider
+  builder={SubmissionStore}
+  persist={{
+    key: 'submission',
+    enabled: true,
+    delay: 500,
+    async hydrate({ store: runtimeStore }) {
+      await runtimeStore.hydrate(initialState)
+    },
+  }}
+>
+  <SubmissionScreen />
+</PersistStoreProvider>
 ```
 
 Boundary:
 
 ```tsx
-<PersistenceBoundary
-  store={store}
+<PersistStoreProvider
+  builder={SubmissionStore}
   flushOnUnmount
   flushOnPageHide
   flushOnBackground
 >
-  {children}
-</PersistenceBoundary>
+  <SubmissionScreen />
+</PersistStoreProvider>
 ```
 
-`usePersistentStore(...)` returns:
+`usePersistentStore(builder)` returns:
 
 - `store`
 - `meta`
-- `isHydrated`
 - `flush()`
+
+`PersistenceBoundary` is still exported as a compatibility escape hatch when
+only a nested sub-tree should own flush behavior, but `PersistStoreProvider` is
+the primary lifecycle API.
