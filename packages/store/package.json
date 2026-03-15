@@ -30,7 +30,7 @@
     "test": "vitest run && bun run test:types",
     "typecheck": "tsc --noEmit",
     "check": "bun run typecheck && bun run test",
-    "test:types": "bun run build && tsd --files test/types/**/*.test-d.ts"
+    "test:types": "bun run build && tsd --files test/types/**/*.test-d.ts --files src/plugins/**/*.test-d.ts"
   },
   "dependencies": {
     "@tanstack/react-store": "0.9.2",

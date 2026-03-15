@@ -1,7 +1,10 @@
+import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createStore } from '../../src/core'
-import { actions } from '../../src/plugins/actions'
+import { createStore } from '../../../../core'
+
+import { actions } from '../../plugin'
+import { useActions } from '../../react'
 
 describe('actions plugin', () => {
   it('attaches typed actions outside state', () => {
@@ -37,5 +40,33 @@ describe('actions plugin', () => {
     store.actions.setValue('same')
 
     expect(store.get()).toBe(previous)
+  })
+
+  it('returns the actions surface through useActions', () => {
+    const builder = createStore({ count: 0 }).extend(
+      actions(({ setState }) => ({
+        increment() {
+          setState((prev) => ({ count: prev.count + 1 }))
+        },
+      })),
+    )
+
+    const store = builder.create()
+
+    function Probe() {
+      const runtimeActions = useActions(store)
+
+      return (
+        <button onClick={() => runtimeActions.increment()} type="button">
+          run
+        </button>
+      )
+    }
+
+    render(<Probe />)
+
+    fireEvent.click(screen.getByRole('button'))
+
+    expect(store.get().count).toBe(1)
   })
 })

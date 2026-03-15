@@ -1,7 +1,7 @@
 import { expectType } from 'tsd'
 
-import { createStore } from '../../dist/core/index.js'
-import { actions } from '../../dist/plugins/actions/index.js'
+import { createStore } from '../../../../../dist/core/index.js'
+import { actions, useActions } from '../../../../../dist/plugins/actions/index.js'
 
 const builder = createStore({ count: 0 }).extend(
   actions(({ setState }) => ({
@@ -14,3 +14,4 @@ const builder = createStore({ count: 0 }).extend(
 const store = builder.create()
 
 expectType<(step: number) => void>(store.actions.increment)
+expectType<{ increment: (step: number) => void }>(useActions(store))
