@@ -65,11 +65,7 @@ The generic React layer gives you:
 
 ```tsx
 import { createStore } from '@lunarhue/store/core'
-import {
-  StoreProvider,
-  useSelector,
-  useStore,
-} from '@lunarhue/store/react'
+import { StoreProvider, useSelector, useStore } from '@lunarhue/store/react'
 
 const CounterStore = createStore({ count: 0 })
 
@@ -203,9 +199,16 @@ const DraftStore = createStore({
 }).extend(
   persist({
     flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      window.localStorage.setItem(key, JSON.stringify(nextState))
+    },
   }),
 )
 ```
+
+Declaration-time persist callbacks act as defaults. Runtime wiring can override
+them when a specific screen or provider needs different behavior.
 
 React wiring:
 
@@ -222,7 +225,6 @@ function DraftScreen() {
   const { isHydrated, flush } = usePersistentStore(store, {
     key: 'draft',
     enabled: true,
-    delay: 500,
     async hydrate({ store: runtimeStore }) {
       const serialized = window.localStorage.getItem('draft')
 
@@ -232,9 +234,6 @@ function DraftScreen() {
       }
 
       await runtimeStore.hydrate(JSON.parse(serialized))
-    },
-    async onPersist({ nextState }) {
-      window.localStorage.setItem('draft', JSON.stringify(nextState))
     },
   })
 
@@ -304,11 +303,9 @@ type LoggerSurface = {
   logSnapshot(): void
 }
 
-export function logger<TState>(label: string): StorePlugin<
-  TState,
-  any,
-  LoggerSurface
-> {
+export function logger<TState>(
+  label: string,
+): StorePlugin<TState, any, LoggerSurface> {
   return ({ store, onDispose }) => {
     const subscription = store.subscribe((state) => {
       console.log(label, state)

@@ -14,7 +14,7 @@ Builder API:
 type StoreBuilder<TState, TPlugins = {}> = {
   create(): Store<TState, TPlugins>
   extend<TNextPlugins>(
-    plugin: StorePlugin<TState, TPlugins, TNextPlugins>
+    plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
 }
 ```
@@ -140,9 +140,20 @@ import {
 Plugin install:
 
 ```ts
-const SubmissionStore = createStore({})
-  .extend(persist({ flushOnDispose: true }))
+const SubmissionStore = createStore({}).extend(
+  persist({
+    flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      await saveByKey(key, nextState)
+    },
+  }),
+)
 ```
+
+Persist callbacks and debounce settings may be declared on `persist(...)` as
+defaults. Runtime config passed to `usePersistentStore(...)` overrides those
+defaults when present.
 
 React runtime wiring:
 
@@ -155,9 +166,6 @@ const persistentStore = usePersistentStore(store, {
   delay: 500,
   async hydrate({ store: runtimeStore }) {
     await runtimeStore.hydrate(initialState)
-  },
-  async onPersist({ nextState }) {
-    await save(nextState)
   },
 })
 ```

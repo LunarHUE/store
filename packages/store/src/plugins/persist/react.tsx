@@ -1,14 +1,12 @@
-import {
-  type ReactNode,
-  useEffect,
-  useEffectEvent,
-} from 'react'
+import { type ReactNode, useEffect, useEffectEvent } from 'react'
 
 import { useSelector } from '../../react'
 
 import {
   persistControllerKey,
+  type PersistHydrateArgs,
   type PersistMeta,
+  type PersistPersistArgs,
   type PersistRuntimeOptions,
   type PersistedStore,
 } from './types'
@@ -33,30 +31,36 @@ export function usePersistentStore<TState>(
   options: PersistRuntimeOptions<TState>,
 ): PersistentStoreResult<TState> {
   const meta = usePersistSelector(store, (currentMeta) => currentMeta)
-  const onPersist = useEffectEvent(options.onPersist)
-  const hydrate = useEffectEvent(
-    async (args: { key: string; store: PersistedStore<TState> }) => {
-      if (!options.hydrate) {
-        return
-      }
+  const onPersist = useEffectEvent(async (args: PersistPersistArgs<TState>) => {
+    if (!options.onPersist) {
+      return
+    }
 
-      await options.hydrate(args)
-    },
-  )
+    await options.onPersist(args)
+  })
+  const hydrate = useEffectEvent(async (args: PersistHydrateArgs<TState>) => {
+    if (!options.hydrate) {
+      return
+    }
+
+    await options.hydrate(args)
+  })
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {
       key: options.key,
       enabled: options.enabled,
       delay: options.delay,
-      onPersist(args) {
-        return onPersist(args)
-      },
-      hydrate: options.hydrate
-        ? (args) => hydrate(args)
-        : undefined,
+      onPersist: options.onPersist ? (args) => onPersist(args) : undefined,
+      hydrate: options.hydrate ? (args) => hydrate(args) : undefined,
     })
-  }, [options.delay, options.enabled, options.key, store, Boolean(options.hydrate)])
+  }, [
+    options.delay,
+    options.enabled,
+    options.key,
+    store,
+    Boolean(options.hydrate),
+  ])
 
   return {
     store,

@@ -13,18 +13,12 @@ export type PersistMeta = {
   error: unknown | null
 }
 
-export type PersistPluginOptions<TState> = {
-  flushOnDispose?: boolean
-  hydratedOnCreate?: boolean
-  serializeState?: (state: TState) => TState
-}
-
 export type PersistHydrateArgs<TState> = {
   key: string
   store: PersistedStore<TState>
 }
 
-export type PersistRuntimePersistArgs<TState> = {
+export type PersistPersistArgs<TState> = {
   key: string
   previousState: TState
   nextState: TState
@@ -35,8 +29,14 @@ export type PersistRuntimeOptions<TState> = {
   enabled?: boolean
   delay?: number
   hydrate?: (args: PersistHydrateArgs<TState>) => Promise<void>
-  onPersist: (args: PersistRuntimePersistArgs<TState>) => Promise<void>
+  onPersist?: (args: PersistPersistArgs<TState>) => Promise<void>
 }
+
+export type PersistPluginOptions<TState> = {
+  flushOnDispose?: boolean
+  hydratedOnCreate?: boolean
+  serializeState?: (state: TState) => TState
+} & Omit<PersistRuntimeOptions<TState>, 'key'>
 
 export type PersistController<TState> = {
   metaStore: Store<PersistMeta>
