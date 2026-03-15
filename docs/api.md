@@ -131,6 +131,7 @@ actions.increment()
 ```ts
 import {
   persist,
+  PersistStoreProvider,
   PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
@@ -152,7 +153,7 @@ const SubmissionStore = createStore({}).extend(
 ```
 
 Persist callbacks and debounce settings may be declared on `persist(...)` as
-defaults. Runtime config passed to `usePersistentStore(...)` overrides those
+defaults. Runtime config passed to `PersistStoreProvider` overrides those
 defaults when present.
 
 React runtime wiring:
@@ -160,20 +161,24 @@ React runtime wiring:
 ```ts
 const store = useStore(SubmissionStore)
 
-const persistentStore = usePersistentStore(store, {
-  key: 'submission',
-  enabled: true,
-  delay: 500,
-  async hydrate({ store: runtimeStore }) {
-    await runtimeStore.hydrate(initialState)
-  },
-})
+const persistentStore = usePersistentStore(SubmissionStore)
+const pending = usePersistSelector(SubmissionStore, (meta) => meta.pending)
 ```
 
-Meta selection:
-
-```ts
-const pending = usePersistSelector(store, (meta) => meta.pending)
+```tsx
+<PersistStoreProvider
+  builder={SubmissionStore}
+  persist={{
+    key: 'submission',
+    enabled: true,
+    delay: 500,
+    async hydrate({ store: runtimeStore }) {
+      await runtimeStore.hydrate(initialState)
+    },
+  }}
+>
+  <SubmissionScreen />
+</PersistStoreProvider>
 ```
 
 Boundary:
@@ -189,7 +194,7 @@ Boundary:
 </PersistenceBoundary>
 ```
 
-`usePersistentStore(...)` returns:
+`usePersistentStore(builder)` returns:
 
 - `store`
 - `meta`

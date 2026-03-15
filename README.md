@@ -184,8 +184,9 @@ The persist plugin adds:
 - `store.persist.flush()`
 - `store.persist.hydrate(...)`
 - `store.persist.metaStore`
-- `usePersistentStore(...)`
-- `usePersistSelector(...)`
+- `PersistStoreProvider`
+- `usePersistentStore(builder)`
+- `usePersistSelector(builder, selector)`
 - `PersistenceBoundary`
 
 Store declaration:
@@ -214,6 +215,7 @@ React wiring:
 
 ```tsx
 import {
+  PersistStoreProvider,
   PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
@@ -222,22 +224,8 @@ import { useStore } from '@lunarhue/store/react'
 
 function DraftScreen() {
   const store = useStore(DraftStore)
-  const { isHydrated, flush } = usePersistentStore(store, {
-    key: 'draft',
-    enabled: true,
-    async hydrate({ store: runtimeStore }) {
-      const serialized = window.localStorage.getItem('draft')
-
-      if (!serialized) {
-        await runtimeStore.hydrate(runtimeStore.get())
-        return
-      }
-
-      await runtimeStore.hydrate(JSON.parse(serialized))
-    },
-  })
-
-  const pending = usePersistSelector(store, (meta) => meta.pending)
+  const { isHydrated, flush } = usePersistentStore(DraftStore)
+  const pending = usePersistSelector(DraftStore, (meta) => meta.pending)
 
   return (
     <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>
@@ -247,6 +235,30 @@ function DraftScreen() {
         <button onClick={() => void flush()}>Flush</button>
       </div>
     </PersistenceBoundary>
+  )
+}
+
+function App() {
+  return (
+    <PersistStoreProvider
+      builder={DraftStore}
+      persist={{
+        key: 'draft',
+        enabled: true,
+        async hydrate({ store: runtimeStore }) {
+          const serialized = window.localStorage.getItem('draft')
+
+          if (!serialized) {
+            await runtimeStore.hydrate(runtimeStore.get())
+            return
+          }
+
+          await runtimeStore.hydrate(JSON.parse(serialized))
+        },
+      }}
+    >
+      <DraftScreen />
+    </PersistStoreProvider>
   )
 }
 ```

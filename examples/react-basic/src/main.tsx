@@ -8,16 +8,12 @@ import {
   useActions,
 } from '@lunarhue/store/plugins/actions'
 import {
-  PersistenceBoundary,
+  PersistStoreProvider,
   persist,
   usePersistentStore,
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
-import {
-  StoreProvider,
-  useStore,
-  useStoreSelector,
-} from '@lunarhue/store/react'
+import { useStore, useStoreSelector } from '@lunarhue/store/react'
 
 type DemoState = {
   count: number
@@ -83,6 +79,20 @@ const DemoStore = createStore<DemoState>(DEMO_INITIAL_STATE)
   .extend(
     persist({
       flushOnDispose: true,
+      delay: 400,
+      async hydrate({ store: runtimeStore }) {
+        const serialized = window.localStorage.getItem(STORAGE_KEY)
+
+        if (!serialized) {
+          await runtimeStore.hydrate(runtimeStore.get())
+          return
+        }
+
+        await runtimeStore.hydrate(JSON.parse(serialized) as DemoState)
+      },
+      async onPersist({ nextState }) {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
+      },
     }),
   )
 
@@ -172,26 +182,8 @@ function CountPanel() {
 
 function PersistMetaPanel() {
   const store = useStore(DemoStore)
-  const { isHydrated, flush } = usePersistentStore(store, {
-    key: STORAGE_KEY,
-    delay: 400,
-    enabled: true,
-    async hydrate({ store: runtimeStore }) {
-      const serialized = window.localStorage.getItem(STORAGE_KEY)
-
-      if (!serialized) {
-        await runtimeStore.hydrate(runtimeStore.get())
-        return
-      }
-
-      await runtimeStore.hydrate(JSON.parse(serialized) as DemoState)
-    },
-    async onPersist({ nextState }) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
-    },
-  })
-
-  const persistMeta = usePersistSelector(store, (meta) => meta)
+  const { isHydrated, flush } = usePersistentStore(DemoStore)
+  const persistMeta = usePersistSelector(DemoStore, (meta) => meta)
 
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
@@ -519,18 +511,14 @@ function ExampleScreen() {
 
 function App() {
   return (
-    <StoreProvider builder={DemoStore}>
-      {({ store }) => (
-        <PersistenceBoundary
-          store={store}
-          flushOnUnmount
-          flushOnPageHide
-          flushOnBackground
-        >
-          <ExampleScreen />
-        </PersistenceBoundary>
-      )}
-    </StoreProvider>
+    <PersistStoreProvider
+      builder={DemoStore}
+      flushOnUnmount
+      flushOnPageHide
+      flushOnBackground
+    >
+      <ExampleScreen />
+    </PersistStoreProvider>
   )
 }
 
