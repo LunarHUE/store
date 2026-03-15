@@ -360,3 +360,15 @@ Plugin authoring guidelines:
 - `packages/store`: publishable package
 - `examples/react-basic`: Vite React example using the public API
 - `docs`: additional architecture, API, migration, and phase notes
+
+## Release flow
+
+Stable releases for `@lunarhue/store` use Changesets and GitHub Actions.
+
+- add a changeset for user-facing package changes
+- merge to `main`
+- review and merge the generated release PR
+- verify the npm package and GitHub release artifacts
+
+See [docs/releases.md](./docs/releases.md) for the full maintainer workflow,
+including npm trusted publisher setup.
