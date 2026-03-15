@@ -357,4 +357,5 @@ Plugin authoring guidelines:
 
 - `packages/store`: publishable package
 - `examples/react-basic`: Vite React example using the public API
+- `examples/nextjs`: Next.js App Router example using the public API
 - `docs`: additional architecture, API, migration, and phase notes
