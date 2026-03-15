@@ -203,9 +203,16 @@ const DraftStore = createStore({
 }).extend(
   persist({
     flushOnDispose: true,
+    delay: 500,
+    async onPersist({ key, nextState }) {
+      window.localStorage.setItem(key, JSON.stringify(nextState))
+    },
   }),
 )
 ```
+
+Declaration-time persist callbacks act as defaults. Runtime wiring can override
+them when a specific screen or provider needs different behavior.
 
 React wiring:
 
@@ -222,7 +229,6 @@ function DraftScreen() {
   const { isHydrated, flush } = usePersistentStore(store, {
     key: 'draft',
     ready: true,
-    delay: 500,
     async hydrate(runtimeStore) {
       const serialized = window.localStorage.getItem('draft')
 
@@ -232,9 +238,6 @@ function DraftScreen() {
       }
 
       await runtimeStore.hydrate(JSON.parse(serialized))
-    },
-    async onPersist({ nextState }) {
-      window.localStorage.setItem('draft', JSON.stringify(nextState))
     },
   })
 

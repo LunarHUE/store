@@ -141,8 +141,20 @@ Plugin install:
 
 ```ts
 const SubmissionStore = createStore({})
-  .extend(persist({ flushOnDispose: true }))
+  .extend(
+    persist({
+      flushOnDispose: true,
+      delay: 500,
+      async onPersist({ key, nextState }) {
+        await saveByKey(key, nextState)
+      },
+    }),
+  )
 ```
+
+Persist callbacks and debounce settings may be declared on `persist(...)` as
+defaults. Runtime config passed to `usePersistentStore(...)` overrides those
+defaults when present.
 
 React runtime wiring:
 
@@ -152,12 +164,8 @@ const store = useStore(SubmissionStore)
 const persistentStore = usePersistentStore(store, {
   key: 'submission',
   ready: true,
-  delay: 500,
   async hydrate(runtimeStore) {
     await runtimeStore.hydrate(initialState)
-  },
-  async onPersist({ nextState }) {
-    await save(nextState)
   },
 })
 ```
