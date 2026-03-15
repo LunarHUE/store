@@ -479,7 +479,9 @@ describe('persist core', () => {
   })
 
   it('generates a stable fallback key when one is not provided', async () => {
-    const onPersist = vi.fn(async (_args: PersistRuntimePersistArgs<{ count: number }>) => {})
+    const onPersist = vi.fn(
+      async (_args: PersistPersistArgs<{ count: number }>) => {},
+    )
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
     const controller = store.persist[persistControllerKey]
@@ -515,8 +517,10 @@ describe('persist core', () => {
 
   it('passes the resolved key to hydrate callbacks', async () => {
     const hydrate = vi.fn(
-      async ({ store: runtimeStore }: PersistHydrateArgs<{ count: number }>) => {
-      await runtimeStore.hydrate({ count: 6 })
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
+        await runtimeStore.hydrate({ count: 6 })
       },
     )
     const builder = createStore({ count: 0 }).extend(persist())
