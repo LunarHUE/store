@@ -4,15 +4,11 @@ export {
   PersistenceBoundary,
   usePersistentStore,
 } from './react'
-export { persistBrand } from './types'
 export type {
   PersistHydrateArgs,
-  PersistBrand,
-  PersistController,
   PersistMeta,
   PersistPersistArgs,
   PersistPluginOptions,
-  PersistPluginSurface,
   PersistRuntimeOptions,
   PersistedStore,
 } from './types'

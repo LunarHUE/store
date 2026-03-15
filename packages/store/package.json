@@ -21,7 +21,6 @@
   ],
   "type": "module",
   "sideEffects": false,
-  "types": "./dist/core/index.d.ts",
   "files": [
     "dist"
   ],
@@ -48,9 +47,10 @@
   },
   "scripts": {
     "build": "tsup",
+    "contract": "bun run build && node ./scripts/check-package-contract.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "check": "bun run typecheck && bun run test"
+    "check": "bun run typecheck && bun run test && bun run contract"
   },
   "dependencies": {
     "@tanstack/react-store": "0.9.2",

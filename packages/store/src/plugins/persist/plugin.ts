@@ -1,5 +1,5 @@
 import { createPersistController } from './controller'
-import { persistBrand, persistControllerKey } from './types'
+import { persistControllerKey } from './types'
 
 import type { PersistPlugin, PersistPluginOptions } from './types'
 
@@ -16,7 +16,6 @@ export function persist<TState>(
     }
 
     return {
-      [persistBrand]: true,
       hydrate(nextState: TState) {
         return controller.hydrate(nextState)
       },
