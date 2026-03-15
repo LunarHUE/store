@@ -1,4 +1,4 @@
-import type { Store as TanStackStoreBase } from '@tanstack/store'
+import type { Store as BaseStore } from '@tanstack/store'
 
 export type StoreBrand<TKey extends symbol> = {
   readonly [K in TKey]: true
@@ -10,14 +10,24 @@ export type StoreSubscription = {
 
 export type StoreCleanup = () => void | Promise<void>
 
-export type TanStackStore<TState> = TanStackStoreBase<TState>
-
+export type TanStackStore<TState> = BaseStore<TState>
 export type Store<TState, TPlugins = {}> = TanStackStore<TState> & {
   dispose(): Promise<void>
 } & TPlugins
 
-export type StoreInstance<TState, TPlugins = {}> = Store<TState, TPlugins>
-
+export type AnyStore = Store<any, any>
+export type StorePlugins<TStore extends AnyStore> = TStore extends {
+  [K in keyof TStore]: TStore[K] extends (...args: any[]) => any
+    ? TStore[K]
+    : never
+}
+  ? TStore
+  : never
+export type StoreState<TStore extends AnyStore> = TStore extends {
+  get: () => infer TState
+}
+  ? TState
+  : never
 export type StorePluginContext<TState, TPlugins> = {
   store: Store<TState, TPlugins>
   onDispose(cleanup: StoreCleanup): void
@@ -33,7 +43,3 @@ export type StoreBuilder<TState, TPlugins = {}> = {
     plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
 }
-
-export type StoreFactory<TState, TPlugins = {}> = StoreBuilder<TState, TPlugins>
-
-export type StoreDefinition<TState, TPlugins = {}> = StoreBuilder<TState, TPlugins>

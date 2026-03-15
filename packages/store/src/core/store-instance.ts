@@ -1,24 +1,21 @@
 import { createStore as createTanStackStore } from '@tanstack/store'
 
-import type {
-  StoreCleanup,
-  StoreInstance,
-} from './types'
+import type { StoreCleanup, Store } from './types'
 
-type StoreInstanceController<TState> = {
-  store: StoreInstance<TState>
+type StoreController<TState> = {
+  store: Store<TState>
   onDispose(cleanup: StoreCleanup): void
   attachSurface(surface: object): void
 }
 
 export function createStoreInstance<TState>(
   initialState: TState,
-): StoreInstanceController<TState> {
+): StoreController<TState> {
   const store = createTanStackStore(initialState)
   const cleanups: StoreCleanup[] = []
   let disposePromise: Promise<void> | null = null
 
-  const instance = store as StoreInstance<TState>
+  const instance = store as Store<TState>
 
   Object.defineProperty(instance, 'dispose', {
     configurable: true,
