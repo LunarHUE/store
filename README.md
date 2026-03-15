@@ -1,6 +1,6 @@
 # `@lunarhue/store`
 
-Framework-agnostic state built on top of `@tanstack/store`, with Lunarhue-style
+Framework-agnostic state built on top of `@tanstack/store`, with
 plugin composition, selector-first React bindings, and plugin-owned React APIs.
 
 This repo is a Bun workspace. The publishable package lives in
