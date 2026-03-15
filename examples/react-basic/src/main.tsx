@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 
 import { createStore } from '@lunarhue/store/core'
@@ -10,9 +10,9 @@ import {
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
 import {
-  createStoreContext,
-  useSelector,
+  StoreProvider,
   useStore,
+  useStoreSelector,
 } from '@lunarhue/store/react'
 
 type DemoState = {
@@ -76,8 +76,6 @@ const DemoStore = createStore<DemoState>(DEMO_INITIAL_STATE)
     }),
   )
 
-const DemoStoreContext = createStoreContext(DemoStore)
-
 const panelSurface = {
   background: 'rgba(255, 255, 255, 0.84)',
   border: '1px solid rgba(19, 33, 47, 0.08)',
@@ -125,7 +123,7 @@ function RenderBadge(props: RenderBadgeProps) {
 function CountPanel() {
   const store = useStore(DemoStore)
   const actions = useActions(store)
-  const count = useSelector(store, (state) => state.count)
+  const count = useStoreSelector(DemoStore, (state) => state.count)
 
   return (
     <article
@@ -312,7 +310,7 @@ function PersistMetaPanel() {
 function DraftComposer() {
   const store = useStore(DemoStore)
   const actions = useActions(store)
-  const draft = useSelector(store, (state) => state.draft)
+  const draft = useStoreSelector(DemoStore, (state) => state.draft)
 
   return (
     <div
@@ -361,7 +359,7 @@ function DraftComposer() {
 function ItemsList() {
   const store = useStore(DemoStore)
   const actions = useActions(store)
-  const items = useSelector(store, (state) => state.items)
+  const items = useStoreSelector(DemoStore, (state) => state.items)
 
   return (
     <>
@@ -510,35 +508,19 @@ function ExampleScreen() {
 }
 
 function App() {
-  const storeRef = useRef<ReturnType<typeof DemoStore.create> | null>(null)
-
-  if (!storeRef.current) {
-    storeRef.current = DemoStore.create()
-  }
-
-  useEffect(() => {
-    const store = storeRef.current
-
-    return () => {
-      if (!store) {
-        return
-      }
-
-      void store.dispose()
-    }
-  }, [])
-
   return (
-    <DemoStoreContext.Provider value={storeRef.current}>
-      <PersistenceBoundary
-        store={storeRef.current}
-        flushOnUnmount
-        flushOnPageHide
-        flushOnBackground
-      >
-        <ExampleScreen />
-      </PersistenceBoundary>
-    </DemoStoreContext.Provider>
+    <StoreProvider builder={DemoStore}>
+      {({ store }) => (
+        <PersistenceBoundary
+          store={store}
+          flushOnUnmount
+          flushOnPageHide
+          flushOnBackground
+        >
+          <ExampleScreen />
+        </PersistenceBoundary>
+      )}
+    </StoreProvider>
   )
 }
 

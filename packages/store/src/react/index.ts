@@ -1,3 +1,6 @@
-export { createStoreContext } from './provider'
+export { StoreProvider } from './provider'
+export type { ProviderProps as StoreProviderProps } from './provider'
+export { useLocalStore } from './use-local-store'
 export { useSelector } from './use-selector'
 export { useStore } from './use-store'
+export { useStoreSelector } from './use-store-selector'

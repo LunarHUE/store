@@ -57,20 +57,21 @@ hold onto.
 
 The generic React layer gives you:
 
-- `createStoreContext(builder)`
+- `StoreProvider`
 - `useStore(builder)`
+- `useLocalStore(builder)`
 - `useSelector(store, selector, compare?)`
+- `useStoreSelector(builder, selector, compare?)`
 
 ```tsx
 import { createStore } from '@lunarhue/store/core'
 import {
-  createStoreContext,
+  StoreProvider,
   useSelector,
   useStore,
 } from '@lunarhue/store/react'
 
 const CounterStore = createStore({ count: 0 })
-const CounterContext = createStoreContext(CounterStore)
 
 function CounterValue() {
   const store = useStore(CounterStore)
@@ -80,24 +81,57 @@ function CounterValue() {
 }
 
 function App() {
-  const store = CounterStore.create()
-
   return (
-    <CounterContext.Provider value={store}>
+    <StoreProvider builder={CounterStore}>
       <CounterValue />
-    </CounterContext.Provider>
+    </StoreProvider>
   )
 }
 ```
 
-If no provider exists, `useStore(builder)` creates a local store instance and
-disposes it on unmount.
+`StoreProvider` also accepts a render-prop child when you need direct access to
+the scoped store instance at the provider boundary:
+
+```tsx
+function App() {
+  return (
+    <StoreProvider builder={CounterStore}>
+      {({ store }) => <PersistenceBoundary store={store} flushOnUnmount />}
+    </StoreProvider>
+  )
+}
+```
+
+`useStore(builder)` is provider-only. If no matching provider exists, it throws.
+
+Use `useLocalStore(builder)` when you want explicit local ownership:
+
+```tsx
+function LocalCounter() {
+  const store = useLocalStore(CounterStore)
+  const count = useSelector(store, (state) => state.count)
+
+  return <span>{count}</span>
+}
+```
 
 Under the hood, React context lookup is keyed by the builder through an
 internal `WeakMap`. That means:
 
 - if a matching provider exists for that builder, every `useStore(builder)` call reads the same provided store instance
-- if no provider exists, each `useStore(builder)` call site creates its own local store instance
+- `StoreProvider builder={...}` creates and owns a store instance for that builder
+- `StoreProvider store={externalStore}` reuses an existing store created from that builder
+- `StoreProvider` children can be plain JSX or a render prop that receives `{ store }`
+
+`useStoreSelector(builder, selector)` is the provider-scoped convenience form of
+state selection:
+
+```tsx
+function CounterValue() {
+  const count = useStoreSelector(CounterStore, (state) => state.count)
+  return <span>{count}</span>
+}
+```
 
 ## Actions plugin
 

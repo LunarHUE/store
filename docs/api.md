@@ -37,29 +37,53 @@ Notes:
 
 ```ts
 import {
-  createStoreContext,
+  StoreProvider,
+  useLocalStore,
   useSelector,
   useStore,
+  useStoreSelector,
 } from '@lunarhue/store/react'
 ```
-
-`createStoreContext(builder)` returns:
-
-- `Provider`
-- `useStore()`
 
 Context lookup is builder-scoped through an internal `WeakMap`.
 
 `useStore(builder)` behavior:
 
 - with a matching provider: returns the shared provided store instance
-- without a provider: creates a new local store instance for that hook call site and disposes it on unmount
+- without a provider: throws
+
+`useLocalStore(builder)` behavior:
+
+- creates a new local store instance for that hook call site
+- disposes it on unmount
+
+Provider usage:
+
+```tsx
+<StoreProvider builder={SubmissionStore}>
+  <Child />
+</StoreProvider>
+
+<StoreProvider store={externalStore}>
+  <Child />
+</StoreProvider>
+
+<StoreProvider builder={SubmissionStore}>
+  {({ store }) => <PersistenceBoundary store={store} flushOnUnmount />}
+</StoreProvider>
+```
 
 Generic selector usage:
 
 ```ts
 const store = useStore(SubmissionStore)
 const value = useSelector(store, (state) => state.count)
+```
+
+Provider-scoped selector usage:
+
+```ts
+const value = useStoreSelector(SubmissionStore, (state) => state.count)
 ```
 
 ## Actions plugin

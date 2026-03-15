@@ -61,17 +61,33 @@ Plugins never merge metadata into app state. They attach extra capability to the
 
 The generic React layer exposes:
 
-- `createStoreContext(builder)`
+- `StoreProvider`
 - `useStore(builder)`
+- `useLocalStore(builder)`
 - `useSelector(store, selector, compare?)`
+- `useStoreSelector(builder, selector, compare?)`
 
-`createStoreContext(builder)` stores a React context in an internal `WeakMap`
-keyed by the builder.
+React context remains an internal implementation detail. A builder-specific
+context is still stored in an internal `WeakMap` keyed by the builder, but the
+public API is provider-first now.
 
-`useStore(builder)` resolves that builder-specific context first:
+`StoreProvider` supports two ownership modes:
+
+- `builder={...}`: provider creates and owns the runtime store lifecycle
+- `store={...}`: provider reuses an externally created runtime store and does not own disposal
+- children may be plain JSX or a render prop receiving `{ store }`
+
+`useStore(builder)` is provider-only:
 
 - if a matching provider exists, all `useStore(builder)` calls under that provider receive the same runtime store instance
-- if no provider exists, each `useStore(builder)` call site creates its own local store instance and disposes it on unmount
+- if no matching provider exists, the hook throws loudly
+
+`useLocalStore(builder)` is the explicit local-ownership escape hatch. It
+creates a store instance locally and disposes it on unmount.
+
+`useStoreSelector(builder, selector)` is the provider-scoped convenience hook
+for state selection. It resolves the store from context and then subscribes via
+the generic selector hook.
 
 ## Persistence model
 

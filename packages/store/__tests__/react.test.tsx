@@ -1,14 +1,18 @@
-import { act, render, screen } from '@testing-library/react'
-import { describe, expect, it } from 'vitest'
+import { act, render, screen, within } from '@testing-library/react'
+import { describe, expect, it, vi } from 'vitest'
 
-import { createStore } from '../src/core'
-import { createStoreContext, useSelector, useStore } from '../src/react'
+import { createStore, type StorePlugin } from '../src/core'
+import {
+  StoreProvider,
+  useLocalStore,
+  useSelector,
+  useStore,
+  useStoreSelector,
+} from '../src/react'
 
 describe('react bindings', () => {
-  it('reads a provider-scoped store instance', () => {
+  it('reads a builder-owned provider-scoped store instance', () => {
     const builder = createStore({ count: 0 })
-    const store = builder.create()
-    const StoreContext = createStoreContext(builder)
 
     function Probe() {
       const scopedStore = useStore(builder)
@@ -16,28 +20,82 @@ describe('react bindings', () => {
     }
 
     render(
-      <StoreContext.Provider value={store}>
+      <StoreProvider builder={builder}>
         <Probe />
-      </StoreContext.Provider>,
+      </StoreProvider>,
     )
 
     expect(screen.getByText('0')).toBeTruthy()
   })
 
-  it('creates a local store instance when no provider exists', () => {
+  it('passes a builder-owned store to render-prop children', () => {
+    const builder = createStore({ count: 2 })
+
+    render(
+      <StoreProvider builder={builder}>
+        {({ store }) => <span>{store.get().count}</span>}
+      </StoreProvider>,
+    )
+
+    expect(screen.getByText('2')).toBeTruthy()
+  })
+
+  it('reads an externally provided store instance', () => {
+    const builder = createStore({ count: 4 })
+    const store = builder.create()
+
+    function Probe() {
+      const scopedStore = useStore(builder)
+      return <span>{scopedStore.get().count}</span>
+    }
+
+    render(
+      <StoreProvider store={store}>
+        <Probe />
+      </StoreProvider>,
+    )
+
+    expect(screen.getByText('4')).toBeTruthy()
+  })
+
+  it('passes an external store to render-prop children', () => {
+    const builder = createStore({ count: 7 })
+    const store = builder.create()
+
+    render(
+      <StoreProvider store={store}>
+        {({ store: scopedStore }) => <span>{scopedStore.get().count}</span>}
+      </StoreProvider>,
+    )
+
+    expect(screen.getByText('7')).toBeTruthy()
+  })
+
+  it('fails loudly when no matching provider exists', () => {
     const builder = createStore({ count: 3 })
 
     function Probe() {
-      const localStore = useStore(builder)
+      useStore(builder)
+      return null
+    }
+
+    expect(() => render(<Probe />)).toThrow(/useStore\(builder\) requires a matching/)
+  })
+
+  it('creates a local store instance explicitly', () => {
+    const builder = createStore({ count: 3 })
+
+    function Probe() {
+      const localStore = useLocalStore(builder)
       return <span>{localStore.get().count}</span>
     }
 
-    render(<Probe />)
+    const view = render(<Probe />)
 
     expect(screen.getByText('3')).toBeTruthy()
   })
 
-  it('subscribes to selector updates', () => {
+  it('subscribes to selector updates from a store instance', () => {
     const builder = createStore({ count: 0 })
     const store = builder.create()
 
@@ -46,12 +104,75 @@ describe('react bindings', () => {
       return <span>{count}</span>
     }
 
-    render(<Probe />)
+    const view = render(<Probe />)
 
     act(() => {
       store.setState((prev) => ({ count: prev.count + 1 }))
     })
 
-    expect(screen.getByText('1')).toBeTruthy()
+    expect(within(view.container).getByText('1')).toBeTruthy()
+  })
+
+  it('subscribes to selector updates from a provider-scoped builder', () => {
+    const builder = createStore({ count: 0 })
+    const store = builder.create()
+
+    function Probe() {
+      const count = useStoreSelector(builder, (state) => state.count)
+      return <span>{count}</span>
+    }
+
+    const view = render(
+      <StoreProvider store={store}>
+        <Probe />
+      </StoreProvider>,
+    )
+
+    act(() => {
+      store.setState((prev) => ({ count: prev.count + 1 }))
+    })
+
+    expect(within(view.container).getByText('1')).toBeTruthy()
+  })
+
+  it('disposes builder-owned stores on unmount but not external stores', () => {
+    const ownedCleanupSpy = vi.fn()
+    const externalCleanupSpy = vi.fn()
+    const createCleanupPlugin = (
+      cleanupSpy: ReturnType<typeof vi.fn>,
+    ): StorePlugin<{ count: number }, any, {}> => {
+      return ({ onDispose }) => {
+        onDispose(() => {
+          cleanupSpy()
+        })
+
+        return {}
+      }
+    }
+
+    const ownedBuilder = createStore({ count: 0 }).extend(
+      createCleanupPlugin(ownedCleanupSpy),
+    )
+    const externalBuilder = createStore({ count: 0 }).extend(
+      createCleanupPlugin(externalCleanupSpy),
+    )
+    const externalStore = externalBuilder.create()
+
+    const ownedView = render(
+      <StoreProvider builder={ownedBuilder}>
+        <span>owned</span>
+      </StoreProvider>,
+    )
+    const externalView = render(
+      <StoreProvider store={externalStore}>
+        <span>external</span>
+      </StoreProvider>,
+    )
+
+    ownedView.unmount()
+    externalView.unmount()
+
+    expect(ownedCleanupSpy).toHaveBeenCalledTimes(1)
+    expect(externalCleanupSpy).not.toHaveBeenCalled()
   })
 })
