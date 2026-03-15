@@ -1,5 +1,6 @@
 export { persist } from './plugin'
 export {
+  PersistStoreProvider,
   PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
@@ -16,4 +17,8 @@ export type {
   PersistRuntimeOptions,
   PersistedStore,
 } from './types'
-export type { PersistenceBoundaryProps, PersistentStoreResult } from './react'
+export type {
+  PersistStoreProviderProps,
+  PersistenceBoundaryProps,
+  PersistentStoreResult,
+} from './react'

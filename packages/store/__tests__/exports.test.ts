@@ -17,6 +17,7 @@ describe('package exports', () => {
     expect(actions.createAction).toBeTypeOf('function')
     expect(actions.useActions).toBeTypeOf('function')
     expect(persist.persist).toBeTypeOf('function')
+    expect(persist.PersistStoreProvider).toBeTypeOf('function')
     expect(persist.usePersistentStore).toBeTypeOf('function')
     expect(persist.usePersistSelector).toBeTypeOf('function')
     expect(persist.PersistenceBoundary).toBeTypeOf('function')

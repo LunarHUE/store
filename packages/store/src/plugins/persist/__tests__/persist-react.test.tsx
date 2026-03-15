@@ -2,6 +2,7 @@ import { act, render, screen, waitFor } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'
 
 import { createStore } from '../../../core'
+import { useStore, useStoreSelector } from '../../../react'
 
 import { persist } from '../plugin'
 import type {
@@ -10,12 +11,149 @@ import type {
   PersistedStore,
 } from '../types'
 import {
+  PersistStoreProvider,
   PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
 } from '../react'
 
 describe('persist react bindings', () => {
+  it('provides a builder-owned persisted store and connects persistence', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist,
+      }),
+    )
+
+    function Probe() {
+      const store = useStore(builder)
+      const count = useStoreSelector(builder, (state) => state.count)
+      const pending = usePersistSelector(store, (meta) => meta.pending)
+
+      return <span>{count}:{pending ? 'pending' : 'idle'}</span>
+    }
+
+    render(
+      <PersistStoreProvider
+        builder={builder}
+        persist={{
+          key: 'provider-builder',
+          hydrate: async ({ store }) => {
+            await store.hydrate({ count: 2 })
+          },
+        }}
+      >
+        <Probe />
+      </PersistStoreProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('2:idle')).toBeTruthy()
+    })
+  })
+
+  it('supports render-prop children with external stores', async () => {
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+    const store = builder.create()
+
+    render(
+      <PersistStoreProvider
+        store={store}
+        persist={{
+          key: 'provider-store',
+          hydrate: async ({ store: runtimeStore }) => {
+            await runtimeStore.hydrate({ count: 4 })
+          },
+        }}
+      >
+        {({ store: scopedStore, isHydrated }) => (
+          <span>
+            {String(isHydrated)}:{scopedStore.get().count}
+          </span>
+        )}
+      </PersistStoreProvider>,
+    )
+
+    await waitFor(() => {
+      expect(screen.getByText('true:4')).toBeTruthy()
+    })
+  })
+
+  it('flushes pending work on unmount through PersistStoreProvider', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(persist())
+    let runtimeStore!: ReturnType<typeof builder.create>
+
+    const view = render(
+      <PersistStoreProvider
+        builder={builder}
+        flushOnUnmount
+        persist={{
+          key: 'provider-unmount',
+          enabled: true,
+          delay: 1000,
+          onPersist,
+        }}
+      >
+        {({ store }) => {
+          runtimeStore = store
+          return <span>mounted</span>
+        }}
+      </PersistStoreProvider>,
+    )
+
+    act(() => {
+      runtimeStore.setState(() => ({ count: 1 }))
+    })
+
+    view.unmount()
+
+    await waitFor(() => {
+      expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('flushes pending work on pagehide through PersistStoreProvider', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(persist())
+    let runtimeStore!: ReturnType<typeof builder.create>
+
+    render(
+      <PersistStoreProvider
+        builder={builder}
+        flushOnPageHide
+        persist={{
+          key: 'provider-pagehide',
+          enabled: true,
+          delay: 1000,
+          onPersist,
+        }}
+      >
+        {({ store }) => {
+          runtimeStore = store
+          return <span>mounted</span>
+        }}
+      </PersistStoreProvider>,
+    )
+
+    act(() => {
+      runtimeStore.setState(() => ({ count: 1 }))
+    })
+
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'))
+    })
+
+    await waitFor(() => {
+      expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+  })
+
   it('hydrates through usePersistentStore and exposes meta', async () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
