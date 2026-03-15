@@ -1,6 +1,4 @@
-export { createStore } from './create-store'
 export type {
-  SetStateUpdater,
   StoreBrand,
   StoreCleanup,
   StoreDefinition,
@@ -8,4 +6,5 @@ export type {
   StorePlugin,
   StorePluginContext,
   StoreSubscription,
+  SetStateUpdater,
 } from './types'
