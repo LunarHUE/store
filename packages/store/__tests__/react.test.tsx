@@ -1,8 +1,8 @@
 import { act, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createStore } from '../../src/core'
-import { createStoreContext, useSelector, useStore } from '../../src/react'
+import { createStore } from '../src/core'
+import { createStoreContext, useSelector, useStore } from '../src/react'
 
 describe('react bindings', () => {
   it('reads a provider-scoped store instance', () => {

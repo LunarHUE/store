@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 
-import { createStore } from '../../src/core'
+import { createStore } from '../src/core'
 
 describe('core store', () => {
   it('reads and writes state', () => {
