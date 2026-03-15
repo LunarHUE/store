@@ -175,8 +175,8 @@ function PersistMetaPanel() {
   const { isHydrated, flush } = usePersistentStore(store, {
     key: STORAGE_KEY,
     delay: 400,
-    ready: true,
-    async hydrate(runtimeStore) {
+    enabled: true,
+    async hydrate({ store: runtimeStore }) {
       const serialized = window.localStorage.getItem(STORAGE_KEY)
 
       if (!serialized) {

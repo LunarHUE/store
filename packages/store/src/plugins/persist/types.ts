@@ -19,21 +19,31 @@ export type PersistPluginOptions<TState> = {
   serializeState?: (state: TState) => TState
 }
 
-export type PersistRuntimeOptions<TState> = {
+export type PersistHydrateArgs<TState> = {
   key: string
-  ready?: boolean
+  store: PersistedStore<TState>
+}
+
+export type PersistRuntimePersistArgs<TState> = {
+  key: string
+  previousState: TState
+  nextState: TState
+}
+
+export type PersistRuntimeOptions<TState> = {
+  key?: string
+  enabled?: boolean
   delay?: number
-  hydrate?: (store: PersistedStore<TState>) => Promise<void>
-  onPersist: (args: {
-    key: string
-    previousState: TState
-    nextState: TState
-  }) => Promise<void>
+  hydrate?: (args: PersistHydrateArgs<TState>) => Promise<void>
+  onPersist: (args: PersistRuntimePersistArgs<TState>) => Promise<void>
 }
 
 export type PersistController<TState> = {
   metaStore: Store<PersistMeta>
-  connect(store: PersistedStore<TState>, options: PersistRuntimeOptions<TState>): () => void
+  connect(
+    store: PersistedStore<TState>,
+    options: PersistRuntimeOptions<TState>,
+  ): () => void
   flush(): Promise<void>
   hydrate(nextState: TState): Promise<void>
 }

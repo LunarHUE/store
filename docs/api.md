@@ -151,9 +151,9 @@ const store = useStore(SubmissionStore)
 
 const persistentStore = usePersistentStore(store, {
   key: 'submission',
-  ready: true,
+  enabled: true,
   delay: 500,
-  async hydrate(runtimeStore) {
+  async hydrate({ store: runtimeStore }) {
     await runtimeStore.hydrate(initialState)
   },
   async onPersist({ nextState }) {
