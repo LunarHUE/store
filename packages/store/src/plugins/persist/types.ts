@@ -1,9 +1,6 @@
-import type { Store, StoreBrand, StorePlugin } from '../../core'
+import type { Store, StorePlugin } from '../../core'
 
-export const persistBrand = Symbol('lunarhue.store.persist')
 export const persistControllerKey = Symbol('lunarhue.store.persist.controller')
-
-export type PersistBrand = StoreBrand<typeof persistBrand>
 
 export type PersistMeta = {
   isHydrated: boolean
@@ -38,6 +35,17 @@ export type PersistPluginOptions<TState> = {
   serializeState?: (state: TState) => TState
 } & Omit<PersistRuntimeOptions<TState>, 'key'>
 
+export type PersistRuntimeSurface<TState> = {
+  flush(): Promise<void>
+  hydrate(nextState: TState): Promise<void>
+  meta: Store<PersistMeta>
+}
+
+export type PersistStoreSurface<TState> = {
+  hydrate(nextState: TState): Promise<void>
+  persist: PersistRuntimeSurface<TState>
+}
+
 export type PersistController<TState> = {
   meta: Store<PersistMeta>
   connect(
@@ -48,23 +56,24 @@ export type PersistController<TState> = {
   hydrate(nextState: TState): Promise<void>
 }
 
-export type PersistPluginSurface<TState> = PersistBrand & {
-  hydrate(nextState: TState): Promise<void>
-  persist: {
-    flush(): Promise<void>
-    hydrate(nextState: TState): Promise<void>
-    meta: Store<PersistMeta>
+export type InternalPersistStoreSurface<TState> = PersistStoreSurface<TState> & {
+  persist: PersistRuntimeSurface<TState> & {
     [persistControllerKey]: PersistController<TState>
   }
 }
 
 export type PersistedStore<TState, TPlugins = {}> = Store<
   TState,
-  TPlugins & PersistPluginSurface<TState>
+  TPlugins & PersistStoreSurface<TState>
+>
+
+export type InternalPersistedStore<TState, TPlugins = {}> = Store<
+  TState,
+  TPlugins & InternalPersistStoreSurface<TState>
 >
 
 export type PersistPlugin<TState> = StorePlugin<
   TState,
   any,
-  PersistPluginSurface<TState>
+  PersistStoreSurface<TState>
 >

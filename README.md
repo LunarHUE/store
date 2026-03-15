@@ -186,7 +186,6 @@ The persist plugin adds:
 - `store.persist.meta`
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
-- `usePersistSelector(builder, selector)`
 - `PersistenceBoundary` as a compatibility escape hatch
 
 Store declaration:
@@ -217,13 +216,12 @@ React wiring:
 import {
   PersistStoreProvider,
   usePersistentStore,
-  usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
+import { useSelector } from '@lunarhue/store/react'
 
 function DraftScreen() {
-  const store = useStore(DraftStore)
-  const { flush } = usePersistentStore(DraftStore)
-  const persistMeta = usePersistSelector(DraftStore, (meta) => meta)
+  const { flush, store } = usePersistentStore(DraftStore)
+  const persistMeta = useSelector(store.persist.meta, (meta) => meta)
 
   return (
     <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>

@@ -5,11 +5,18 @@ import { createStore } from '../../../core'
 import { createPersistController } from '../controller'
 import { persist } from '../plugin'
 import type {
+  InternalPersistedStore,
   PersistedStore,
   PersistHydrateArgs,
   PersistPersistArgs,
 } from '../types'
 import { persistControllerKey } from '../types'
+
+function getPersistController<TState>(
+  store: PersistedStore<TState>,
+): InternalPersistedStore<TState>['persist'][typeof persistControllerKey] {
+  return (store as InternalPersistedStore<TState>).persist[persistControllerKey]
+}
 
 describe('persist core', () => {
   afterEach(() => {
@@ -34,7 +41,7 @@ describe('persist core', () => {
     const onPersist = vi.fn(async () => {})
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
-    const disconnect = store.persist[persistControllerKey].connect(store, {
+    const disconnect = getPersistController(store).connect(store, {
       key: 'demo',
       delay: 50,
       onPersist,
@@ -69,7 +76,7 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'flush',
       onPersist,
       enabled: true,
@@ -96,7 +103,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'dispose',
       onPersist,
       enabled: true,
@@ -113,7 +120,7 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'errors',
       onPersist: async () => {
         throw failure
@@ -137,7 +144,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-persist',
     })
 
@@ -162,7 +169,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'override-persist',
       onPersist: runtimeOnPersist,
     })
@@ -190,7 +197,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-hydrate',
     })
 
@@ -217,7 +224,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'override-hydrate',
       hydrate: (args) => runtimeHydrate(args),
     })
@@ -242,7 +249,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-delay',
     })
 
@@ -260,7 +267,7 @@ describe('persist core', () => {
     const store = builder.create()
 
     expect(() =>
-      store.persist[persistControllerKey].connect(store, {
+      getPersistController(store).connect(store, {
         key: 'missing-persist',
       }),
     ).toThrow(/requires onPersist/)
@@ -275,7 +282,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-persist',
     })
 
@@ -300,7 +307,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'override-persist',
       onPersist: runtimeOnPersist,
     })
@@ -328,7 +335,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-hydrate',
     })
 
@@ -353,7 +360,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'override-hydrate',
       hydrate: runtimeHydrate,
     })
@@ -378,7 +385,7 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       key: 'declared-delay',
     })
 
@@ -396,7 +403,7 @@ describe('persist core', () => {
     const store = builder.create()
 
     expect(() =>
-      store.persist[persistControllerKey].connect(store, {
+      getPersistController(store).connect(store, {
         key: 'missing-persist',
       }),
     ).toThrow(/requires onPersist/)
@@ -408,7 +415,7 @@ describe('persist core', () => {
     )
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
-    const controller = store.persist[persistControllerKey]
+    const controller = getPersistController(store)
 
     const disconnect = controller.connect(store, {
       enabled: true,
@@ -450,7 +457,7 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       enabled: true,
       hydrate,
       onPersist: async () => {},
@@ -484,7 +491,7 @@ describe('persist core', () => {
     )
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
-    const controller = store.persist[persistControllerKey]
+    const controller = getPersistController(store)
 
     const disconnect = controller.connect(store, {
       enabled: true,
@@ -526,7 +533,7 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
-    store.persist[persistControllerKey].connect(store, {
+    getPersistController(store).connect(store, {
       enabled: true,
       hydrate,
       onPersist: async () => {},

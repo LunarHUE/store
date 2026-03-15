@@ -1,6 +1,5 @@
 import {
   actionDefinitionBrand,
-  actionsBrand,
   bindActionDefinition,
 } from './types'
 
@@ -10,11 +9,12 @@ import type {
   ActionsBuilderHelpers,
   ActionsPlugin,
   BoundActions,
+  InternalActionDefinition,
 } from './types'
 
 function isActionDefinition<TState>(
   value: unknown,
-): value is ActionDefinition<TState, unknown[], unknown> {
+): value is InternalActionDefinition<TState, unknown[], unknown> {
   return (
     typeof value === 'object' &&
     value !== null &&
@@ -56,7 +56,7 @@ export function createAction<
     [bindActionDefinition](helpers) {
       return (...args) => callback(helpers, ...args)
     },
-  }
+  } as InternalActionDefinition<TState, TArgs, TReturn>
 }
 
 export function actions<TState, TActions>(
@@ -72,7 +72,6 @@ export function actions<TState, TActions>(
     }
 
     return {
-      [actionsBrand]: true,
       actions: bindActions(builder(helpers), helpers),
     }
   }
