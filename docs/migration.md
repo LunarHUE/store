@@ -21,8 +21,9 @@ New mental model:
 3. Move persistence into `.extend(persist(...))`.
 4. Replace context helper setup with `StoreProvider`.
 5. Replace generic state subscriptions with `useSelector(store, selector)` or `useStoreSelector(builder, selector)`.
-6. Move persistence lifecycle wiring into `usePersistentStore(store, options)`.
-7. Replace ad hoc flush handling with `PersistenceBoundary`.
+6. Move persistence lifecycle wiring into `PersistStoreProvider`.
+7. Read persistence state with `usePersistentStore(builder)` and `usePersistSelector(builder, selector)`.
+8. Replace ad hoc flush handling with `PersistenceBoundary` or provider-owned flush options.
 
 ## Example
 
@@ -50,13 +51,9 @@ const SubmissionStore = createStore<Record<string, string>>({})
 Runtime:
 
 ```ts
-<StoreProvider builder={SubmissionStore}>
-  {({ store }) => (
-    <PersistenceBoundary store={store} flushOnUnmount>
-      <SubmissionScreen />
-    </PersistenceBoundary>
-  )}
-</StoreProvider>
+<PersistStoreProvider builder={SubmissionStore} flushOnUnmount>
+  <SubmissionScreen />
+</PersistStoreProvider>
 ```
 
 ## Notes
