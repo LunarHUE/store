@@ -1,5 +1,6 @@
 
 import { createStoreInstance } from './store-instance'
+import { registerStoreBuilder } from './builder-registry'
 
 import type { Store, StoreBuilder, StorePlugin } from './types'
 
@@ -10,25 +11,34 @@ export function createStore<TState>(
 
   const createBuilder = <TPlugins>(
     plugins: PluginList,
-  ): StoreBuilder<TState, TPlugins> => ({
-    create() {
-      const controller = createStoreInstance(initialState)
+  ): StoreBuilder<TState, TPlugins> => {
+    const builder: StoreBuilder<TState, TPlugins> = {
+      create() {
+        const controller = createStoreInstance(initialState)
 
-      for (const plugin of plugins) {
-        const surface = plugin({
-          store: controller.store as Store<TState, any>,
-          onDispose: (cleanup) => controller.onDispose(cleanup),
-        })
+        for (const plugin of plugins) {
+          const surface = plugin({
+            store: controller.store as Store<TState, any>,
+            onDispose: (cleanup) => controller.onDispose(cleanup),
+          })
 
-        controller.attachSurface(surface)
-      }
+          controller.attachSurface(surface)
+        }
 
-      return controller.store as Store<TState, TPlugins>
-    },
-    extend<TNextPlugins>(plugin: StorePlugin<TState, TPlugins, TNextPlugins>) {
-      return createBuilder<TPlugins & TNextPlugins>([...plugins, plugin])
-    },
-  })
+        const store = controller.store as Store<TState, TPlugins>
+        registerStoreBuilder(store, builder)
+
+        return store
+      },
+      extend<TNextPlugins>(
+        plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
+      ) {
+        return createBuilder<TPlugins & TNextPlugins>([...plugins, plugin])
+      },
+    }
+
+    return builder
+  }
 
   return createBuilder<{}>([])
 }

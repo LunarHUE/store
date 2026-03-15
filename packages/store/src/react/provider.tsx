@@ -1,28 +1,100 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 
+import { getStoreBuilder } from '../core/builder-registry'
 import { getStoreContext } from './context'
-import { useStore as useScopedStore } from './use-store'
 
 import type { Store, StoreBuilder } from '../core'
 
-export function createStoreContext<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins>,
+type StoreProviderChildren<TState, TPlugins> =
+  | ReactNode
+  | ((args: { store: Store<TState, TPlugins> }) => ReactNode)
+
+type BuilderProviderProps<TState, TPlugins> = {
+  builder: StoreBuilder<TState, TPlugins>
+  children?: StoreProviderChildren<TState, TPlugins>
+  store?: never
+}
+
+type StoreProviderProps<TState, TPlugins> = {
+  builder?: never
+  children?: StoreProviderChildren<TState, TPlugins>
+  store: Store<TState, TPlugins>
+}
+
+export type ProviderProps<TState, TPlugins> =
+  | BuilderProviderProps<TState, TPlugins>
+  | StoreProviderProps<TState, TPlugins>
+
+export function StoreProvider<TState, TPlugins>(
+  props: ProviderProps<TState, TPlugins>,
 ) {
-  const Context = getStoreContext(builder)
-
-  function Provider(props: {
-    value: Store<TState, TPlugins>
-    children?: ReactNode
-  }) {
-    return <Context.Provider value={props.value}>{props.children}</Context.Provider>
+  if (props.builder !== undefined) {
+    return (
+      <BuilderOwnedStoreProvider builder={props.builder}>
+        {props.children}
+      </BuilderOwnedStoreProvider>
+    )
   }
 
-  function useStore() {
-    return useScopedStore(builder)
+  return (
+    <ExternalStoreProvider store={props.store}>
+      {props.children}
+    </ExternalStoreProvider>
+  )
+}
+
+function BuilderOwnedStoreProvider<TState, TPlugins>({
+  builder,
+  children,
+}: BuilderProviderProps<TState, TPlugins>) {
+  const context = getStoreContext(builder)
+  const builderRef = useRef<StoreBuilder<TState, TPlugins> | null>(null)
+  const storeRef = useRef<Store<TState, TPlugins> | null>(null)
+
+  if (!builderRef.current) {
+    builderRef.current = builder
+  } else if (builderRef.current !== builder) {
+    throw new Error('StoreProvider builder prop must remain stable.')
   }
 
-  return {
-    Provider,
-    useStore,
+  if (!storeRef.current) {
+    storeRef.current = builder.create()
   }
+
+  useEffect(() => {
+    const ownedStore = storeRef.current
+
+    return () => {
+      if (!ownedStore) {
+        return
+      }
+
+      void ownedStore.dispose()
+    }
+  }, [])
+
+  const content =
+    typeof children === 'function'
+      ? children({ store: storeRef.current })
+      : children
+
+  return <context.Provider value={storeRef.current}>{content}</context.Provider>
+}
+
+function ExternalStoreProvider<TState, TPlugins>({
+  children,
+  store,
+}: StoreProviderProps<TState, TPlugins>) {
+  const builder = getStoreBuilder(store)
+
+  if (!builder) {
+    throw new Error(
+      'StoreProvider could not resolve a builder for the provided store. Pass a store created by @lunarhue/store.',
+    )
+  }
+
+  const context = getStoreContext(builder)
+  const content = typeof children === 'function' ? children({ store }) : children
+
+  return <context.Provider value={store}>{content}</context.Provider>
 }

@@ -8,8 +8,10 @@ describe('package exports', () => {
     const persist = await import('../dist/plugins/persist/index.js')
 
     expect(core.createStore).toBeTypeOf('function')
-    expect(react.createStoreContext).toBeTypeOf('function')
+    expect(react.StoreProvider).toBeTypeOf('function')
+    expect(react.useLocalStore).toBeTypeOf('function')
     expect(react.useStore).toBeTypeOf('function')
+    expect(react.useStoreSelector).toBeTypeOf('function')
     expect(react.useSelector).toBeTypeOf('function')
     expect(actions.actions).toBeTypeOf('function')
     expect(actions.useActions).toBeTypeOf('function')
