@@ -29,12 +29,10 @@ function getInitialMeta<TState>(
   }
 }
 
-type ResolvedPersistRuntimeOptions<TState> = {
-  key: string
-  ready: boolean
-  delay: number
+type RuntimeOptions<TState> = Required<
+  Omit<PersistRuntimeOptions<TState>, 'hydrate'>
+> & {
   hydrate?: PersistRuntimeOptions<TState>['hydrate']
-  onPersist: PersistPersistHandler<TState>
 }
 
 export function createPersistController<TState>(
@@ -42,7 +40,8 @@ export function createPersistController<TState>(
   pluginOptions?: PersistPluginOptions<TState>,
 ): PersistController<TState> {
   const metaStore = createPersistMetaStore(getInitialMeta(pluginOptions))
-  let runtimeOptions: ResolvedPersistRuntimeOptions<TState> | null = null
+  const fallbackKey = `persist:${++nextGeneratedPersistKeyId}`
+  let runtimeOptions: RuntimeOptions<TState> | null = null
   let subscription: { unsubscribe(): void } | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
   let queuedTransition: {
@@ -73,7 +72,7 @@ export function createPersistController<TState>(
 
   const resolveRuntimeOptions = (
     options: PersistRuntimeOptions<TState>,
-  ): ResolvedPersistRuntimeOptions<TState> => {
+  ): RuntimeOptions<TState> => {
     const onPersist = options.onPersist ?? pluginOptions?.onPersist
 
     if (!onPersist) {
@@ -83,8 +82,8 @@ export function createPersistController<TState>(
     }
 
     return {
-      key: options.key,
-      ready: options.ready ?? pluginOptions?.ready ?? true,
+      key: resolveKey(options.key),
+      enabled: options.enabled ?? pluginOptions?.enabled ?? true,
       delay: options.delay ?? pluginOptions?.delay ?? 0,
       hydrate: options.hydrate ?? pluginOptions?.hydrate,
       onPersist,
@@ -143,10 +142,8 @@ export function createPersistController<TState>(
 
   const maybeHydrate = async (
     runtimeStore: PersistedStore<TState>,
-    options: ResolvedPersistRuntimeOptions<TState>,
+    options: RuntimeOptions<TState>,
   ) => {
-    const resolvedKey = resolveKey(options.key)
-
     if (!options.enabled || hasRequestedHydrationForKey) {
       return
     }
@@ -164,7 +161,7 @@ export function createPersistController<TState>(
 
     try {
       await options.hydrate({
-        key: resolvedKey,
+        key: options.key,
         store: runtimeStore,
       })
     } catch (error) {
@@ -205,7 +202,7 @@ export function createPersistController<TState>(
             : transition.nextState
 
           await runtimeOptions.onPersist({
-            key: resolveKey(runtimeOptions.key),
+            key: runtimeOptions.key,
             previousState: transition.previousState,
             nextState,
           })
@@ -239,18 +236,19 @@ export function createPersistController<TState>(
   return {
     metaStore,
     connect(runtimeStore, options) {
-      runtimeOptions = resolveRuntimeOptions(options)
+      const resolvedOptions = resolveRuntimeOptions(options)
+      runtimeOptions = resolvedOptions
 
-      if (currentKey !== resolvedKey) {
-        resetForKey(resolvedKey)
+      if (currentKey !== resolvedOptions.key) {
+        resetForKey(resolvedOptions.key)
       }
 
       isConnected = true
       ensureSubscription()
-      void maybeHydrate(runtimeStore, runtimeOptions).catch(() => {})
+      void maybeHydrate(runtimeStore, resolvedOptions).catch(() => {})
 
       return () => {
-        if (currentKey !== resolvedKey) {
+        if (currentKey !== resolvedOptions.key) {
           return
         }
 

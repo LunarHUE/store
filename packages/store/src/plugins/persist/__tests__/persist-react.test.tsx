@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from 'vitest'
 import { createStore } from '../../../core'
 
 import { persist } from '../plugin'
-import type { PersistedStore } from '../types'
+import type {
+  PersistHydrateArgs,
+  PersistRuntimePersistArgs,
+  PersistedStore,
+} from '../types'
 import {
   PersistenceBoundary,
   usePersistentStore,
@@ -47,7 +51,9 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
     const hydrate = vi.fn(
-      async ({ store: runtimeStore }: { store: typeof store }) => {
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
         await runtimeStore.hydrate({ count: 5 })
       },
     )
@@ -114,7 +120,7 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist,
-        hydrate: async (runtimeStore) => {
+        hydrate: async ({ store: runtimeStore }) => {
           await runtimeStore.hydrate({ count: 2 })
         },
       }),
@@ -151,10 +157,14 @@ describe('persist react bindings', () => {
 
   it('prefers runtime persist callbacks over declaration defaults through usePersistentStore', async () => {
     const defaultOnPersist = vi.fn(async () => {})
-    const runtimeOnPersist = vi.fn(async () => {})
+    const runtimeOnPersist = vi.fn(
+      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+    )
     const defaultHydrate = vi.fn(async () => {})
     const runtimeHydrate = vi.fn(
-      async (runtimeStore: PersistedStore<{ count: number }>) => {
+      async ({
+        store: runtimeStore,
+      }: PersistHydrateArgs<{ count: number }>) => {
         await runtimeStore.hydrate({ count: 4 })
       },
     )

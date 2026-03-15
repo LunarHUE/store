@@ -6,10 +6,9 @@ export {
 } from './react'
 export { persistBrand } from './types'
 export type {
-  PersistHydrateArgs,
   PersistBrand,
   PersistController,
-  PersistHydrateHandler,
+  PersistHydrateArgs,
   PersistMeta,
   PersistPersistHandler,
   PersistPluginOptions,
@@ -18,7 +17,4 @@ export type {
   PersistRuntimeOptions,
   PersistedStore,
 } from './types'
-export type {
-  PersistenceBoundaryProps,
-  PersistentStoreResult,
-} from './react'
+export type { PersistenceBoundaryProps, PersistentStoreResult } from './react'

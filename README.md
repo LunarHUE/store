@@ -225,7 +225,6 @@ function DraftScreen() {
   const { isHydrated, flush } = usePersistentStore(store, {
     key: 'draft',
     enabled: true,
-    delay: 500,
     async hydrate({ store: runtimeStore }) {
       const serialized = window.localStorage.getItem('draft')
 
