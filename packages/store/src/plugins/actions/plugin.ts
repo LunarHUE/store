@@ -1,6 +1,63 @@
-import { actionsBrand } from './types'
+import {
+  actionDefinitionBrand,
+  actionsBrand,
+  bindActionDefinition,
+} from './types'
 
-import type { ActionsPlugin } from './types'
+import type {
+  ActionCallback,
+  ActionDefinition,
+  ActionsBuilderHelpers,
+  ActionsPlugin,
+  BoundActions,
+} from './types'
+
+function isActionDefinition<TState>(
+  value: unknown,
+): value is ActionDefinition<TState, unknown[], unknown> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    actionDefinitionBrand in value &&
+    bindActionDefinition in value
+  )
+}
+
+function bindActions<TState, TActions>(
+  declaredActions: TActions,
+  helpers: ActionsBuilderHelpers<TState>,
+): BoundActions<TState, TActions> {
+  const boundActions = {} as BoundActions<TState, TActions>
+
+  for (const key of Reflect.ownKeys(declaredActions as object) as Array<
+    keyof TActions
+  >) {
+    const action = declaredActions[key]
+
+    boundActions[key] = (
+      isActionDefinition<TState>(action)
+        ? action[bindActionDefinition](helpers)
+        : action
+    ) as BoundActions<TState, TActions>[typeof key]
+  }
+
+  return boundActions
+}
+
+export function createAction<
+  TState,
+  TArgs extends unknown[] = [],
+  TReturn = void,
+>(
+  callback: ActionCallback<TState, TArgs, TReturn>,
+): ActionDefinition<TState, TArgs, TReturn> {
+  return {
+    [actionDefinitionBrand]: true,
+    [bindActionDefinition](helpers) {
+      return (...args) => callback(helpers, ...args)
+    },
+  }
+}
 
 export function actions<TState, TActions>(
   builder: (helpers: {
@@ -8,11 +65,15 @@ export function actions<TState, TActions>(
     setState: (updater: (prev: TState) => TState) => void
   }) => TActions,
 ): ActionsPlugin<TState, TActions> {
-  return ({ store }) => ({
-    [actionsBrand]: true,
-    actions: builder({
+  return ({ store }) => {
+    const helpers = {
       getState: () => store.get(),
-      setState: (updater) => store.setState(updater),
-    }),
-  })
+      setState: (updater: (prev: TState) => TState) => store.setState(updater),
+    }
+
+    return {
+      [actionsBrand]: true,
+      actions: bindActions(builder(helpers), helpers),
+    }
+  }
 }

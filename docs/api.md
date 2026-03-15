@@ -89,20 +89,34 @@ const value = useStoreSelector(SubmissionStore, (state) => state.count)
 ## Actions plugin
 
 ```ts
-import { actions, useActions } from '@lunarhue/store/plugins/actions'
+import {
+  actions,
+  createAction,
+  useActions,
+} from '@lunarhue/store/plugins/actions'
 ```
 
 Example:
 
 ```ts
+const increment = createAction<{ count: number }>(({ setState }) => {
+  setState((prev) => ({ ...prev, count: prev.count + 1 }))
+})
+
 const CounterStore = createStore({ count: 0 }).extend(
   actions(({ setState }) => ({
-    increment() {
-      setState((prev) => ({ ...prev, count: prev.count + 1 }))
+    increment,
+    decrement() {
+      setState((prev) => ({ ...prev, count: prev.count - 1 }))
     },
   })),
 )
 ```
+
+`createAction(...)` lets you declare reusable typed actions outside the plugin
+callback. The plugin binds them to `getState` and `setState` when the store is
+created. Plain inline functions still work and can be mixed with reusable
+actions.
 
 Runtime use:
 

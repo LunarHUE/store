@@ -140,19 +140,31 @@ state.
 
 ```ts
 import { createStore } from '@lunarhue/store/core'
-import { actions } from '@lunarhue/store/plugins/actions'
+import { actions, createAction } from '@lunarhue/store/plugins/actions'
+
+const increment = createAction<{ count: number }>(({ setState }) => {
+  setState((prev) => ({
+    ...prev,
+    count: prev.count + 1,
+  }))
+})
 
 const CounterStore = createStore({ count: 0 }).extend(
   actions(({ setState }) => ({
-    increment() {
+    increment,
+    decrement() {
       setState((prev) => ({
         ...prev,
-        count: prev.count + 1,
+        count: prev.count - 1,
       }))
     },
   })),
 )
 ```
+
+Reusable actions are bound to the store helpers when the plugin installs. Inline
+actions still work too, so you can mix both styles in the same `actions(...)`
+object.
 
 In React:
 

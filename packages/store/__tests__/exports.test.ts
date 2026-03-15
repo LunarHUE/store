@@ -14,6 +14,7 @@ describe('package exports', () => {
     expect(react.useStoreSelector).toBeTypeOf('function')
     expect(react.useSelector).toBeTypeOf('function')
     expect(actions.actions).toBeTypeOf('function')
+    expect(actions.createAction).toBeTypeOf('function')
     expect(actions.useActions).toBeTypeOf('function')
     expect(persist.persist).toBeTypeOf('function')
     expect(persist.usePersistentStore).toBeTypeOf('function')

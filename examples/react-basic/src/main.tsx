@@ -2,7 +2,11 @@ import React, { useRef } from 'react'
 import ReactDOM from 'react-dom/client'
 
 import { createStore } from '@lunarhue/store/core'
-import { actions, useActions } from '@lunarhue/store/plugins/actions'
+import {
+  actions,
+  createAction,
+  useActions,
+} from '@lunarhue/store/plugins/actions'
 import {
   PersistenceBoundary,
   persist,
@@ -28,25 +32,31 @@ const DEMO_INITIAL_STATE: DemoState = {
   items: [],
 }
 
+const increment = createAction<DemoState>(({ setState }) => {
+  setState((prev) => ({
+    ...prev,
+    count: prev.count + 1,
+  }))
+})
+
+const setDraft = createAction<DemoState, [draft: string]>(
+  ({ setState }, draft) => {
+    setState((prev) =>
+      prev.draft === draft
+        ? prev
+        : {
+            ...prev,
+            draft,
+          },
+    )
+  },
+)
+
 const DemoStore = createStore<DemoState>(DEMO_INITIAL_STATE)
   .extend(
     actions(({ setState }) => ({
-      increment() {
-        setState((prev) => ({
-          ...prev,
-          count: prev.count + 1,
-        }))
-      },
-      setDraft(draft: string) {
-        setState((prev) =>
-          prev.draft === draft
-            ? prev
-            : {
-                ...prev,
-                draft,
-              },
-        )
-      },
+      increment,
+      setDraft,
       addItem() {
         setState((prev) => {
           const label = prev.draft.trim()
