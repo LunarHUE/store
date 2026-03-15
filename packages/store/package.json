@@ -1,11 +1,32 @@
 {
   "name": "@lunarhue/store",
-  "version": "0.0.0",
+  "version": "0.1.0",
+  "description": "Framework-agnostic state built on top of @tanstack/store with typed plugins and React bindings.",
+  "license": "MIT",
+  "homepage": "https://github.com/LunarHUE/store#readme",
+  "bugs": {
+    "url": "https://github.com/LunarHUE/store/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/LunarHUE/store.git",
+    "directory": "packages/store"
+  },
+  "keywords": [
+    "state",
+    "store",
+    "tanstack",
+    "react",
+    "typescript"
+  ],
   "type": "module",
   "sideEffects": false,
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     "./core": {
       "types": "./dist/core/index.d.ts",
