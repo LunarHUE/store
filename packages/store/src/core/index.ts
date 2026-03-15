@@ -1,11 +1,14 @@
 export { createStore } from './create-store'
 export type {
+  Store,
   StoreBrand,
+  StoreBuilder,
   StoreCleanup,
-  StoreFactory,
   StoreDefinition,
+  StoreFactory,
   StoreInstance,
   StorePlugin,
   StorePluginContext,
   StoreSubscription,
+  TanStackStore,
 } from './types'

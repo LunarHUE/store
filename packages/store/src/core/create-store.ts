@@ -1,34 +1,34 @@
 
 import { createStoreInstance } from './store-instance'
 
-import type { StoreFactory, StoreInstance, StorePlugin } from './types'
+import type { Store, StoreBuilder, StorePlugin } from './types'
 
 export function createStore<TState>(
   initialState: TState,
-): StoreFactory<TState> {
+): StoreBuilder<TState> {
   type PluginList = ReadonlyArray<StorePlugin<TState, any, any>>
 
-  const createFactory = <TPlugins>(
+  const createBuilder = <TPlugins>(
     plugins: PluginList,
-  ): StoreFactory<TState, TPlugins> => ({
+  ): StoreBuilder<TState, TPlugins> => ({
     create() {
       const controller = createStoreInstance(initialState)
 
       for (const plugin of plugins) {
         const surface = plugin({
-          store: controller.store as StoreInstance<TState, any>,
+          store: controller.store as Store<TState, any>,
           onDispose: (cleanup) => controller.onDispose(cleanup),
         })
 
         controller.attachSurface(surface)
       }
 
-      return controller.store as StoreInstance<TState, TPlugins>
+      return controller.store as Store<TState, TPlugins>
     },
     extend<TNextPlugins>(plugin: StorePlugin<TState, TPlugins, TNextPlugins>) {
-      return createFactory<TPlugins & TNextPlugins>([...plugins, plugin])
+      return createBuilder<TPlugins & TNextPlugins>([...plugins, plugin])
     },
   })
 
-  return createFactory<{}>([])
+  return createBuilder<{}>([])
 }

@@ -1,5 +1,7 @@
 export type {
+  Store,
   StoreBrand,
+  StoreBuilder,
   StoreCleanup,
   StoreFactory,
   StoreDefinition,
@@ -7,4 +9,5 @@ export type {
   StorePlugin,
   StorePluginContext,
   StoreSubscription,
+  TanStackStore,
 } from './types'
