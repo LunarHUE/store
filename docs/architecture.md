@@ -29,10 +29,16 @@ That separation matters:
 - `.create()` produces a fresh runtime store instance
 - scoped React usage can create or provide multiple independent instances from the same builder
 
+The builder is immutable. Chaining `.extend(...)` returns a new builder instead
+of mutating the original declaration.
+
 At runtime, a Lunarhue `Store<TState, TPlugins>` is the TanStack store instance plus:
 
 - `dispose(): Promise<void>`
 - any attached plugin surfaces such as `actions` or `persist`
+
+The runtime store object has stable identity for its lifetime. State changes do
+not replace the store instance itself.
 
 ## Plugin model
 
@@ -59,7 +65,13 @@ The generic React layer exposes:
 - `useStore(builder)`
 - `useSelector(store, selector, compare?)`
 
-`useStore(builder)` reads from the nearest matching provider context if one exists. If not, it creates a local store instance and disposes it on unmount.
+`createStoreContext(builder)` stores a React context in an internal `WeakMap`
+keyed by the builder.
+
+`useStore(builder)` resolves that builder-specific context first:
+
+- if a matching provider exists, all `useStore(builder)` calls under that provider receive the same runtime store instance
+- if no provider exists, each `useStore(builder)` call site creates its own local store instance and disposes it on unmount
 
 ## Persistence model
 

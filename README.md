@@ -46,6 +46,13 @@ Why the builder exists:
 - it can create multiple independent store instances
 - React can scope those instances through providers without mutating the store declaration itself
 
+The builder itself is immutable. Calling `.extend(...)` returns a new builder,
+and calling `.create()` returns a new runtime store instance.
+
+Each runtime store instance has stable identity for its lifetime. The state
+inside it changes, but the store object itself is the thing plugins and React
+hold onto.
+
 ## React usage
 
 The generic React layer gives you:
@@ -85,6 +92,12 @@ function App() {
 
 If no provider exists, `useStore(builder)` creates a local store instance and
 disposes it on unmount.
+
+Under the hood, React context lookup is keyed by the builder through an
+internal `WeakMap`. That means:
+
+- if a matching provider exists for that builder, every `useStore(builder)` call reads the same provided store instance
+- if no provider exists, each `useStore(builder)` call site creates its own local store instance
 
 ## Actions plugin
 

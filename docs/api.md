@@ -27,6 +27,12 @@ type Store<TState, TPlugins = {}> = TanStackStore<TState> & {
 } & TPlugins
 ```
 
+Notes:
+
+- `StoreBuilder` is immutable; `.extend(...)` returns a new builder
+- `.create()` returns a fresh runtime store instance
+- runtime store identity is stable for the lifetime of that instance
+
 ## React
 
 ```ts
@@ -41,6 +47,13 @@ import {
 
 - `Provider`
 - `useStore()`
+
+Context lookup is builder-scoped through an internal `WeakMap`.
+
+`useStore(builder)` behavior:
+
+- with a matching provider: returns the shared provided store instance
+- without a provider: creates a new local store instance for that hook call site and disposes it on unmount
 
 Generic selector usage:
 
