@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createStore } from '../../../core'
 
-import { actions } from '../plugin'
+import { actions, createAction } from '../plugin'
 import { useActions } from '../react'
 
 describe('actions plugin', () => {
@@ -40,6 +40,60 @@ describe('actions plugin', () => {
     store.actions.setValue('same')
 
     expect(store.get()).toBe(previous)
+  })
+
+  it('binds reusable action definitions created outside the plugin callback', () => {
+    type CounterState = { count: number }
+
+    const add = createAction<CounterState, [value: number]>(
+      ({ setState }, value) => {
+        setState((prev) => ({
+          count: prev.count + value,
+        }))
+      },
+    )
+
+    const builder = createStore<CounterState>({ count: 0 }).extend(
+      actions(() => ({
+        add,
+      })),
+    )
+
+    const store = builder.create()
+
+    store.actions.add(3)
+
+    expect(store.get().count).toBe(3)
+  })
+
+  it('allows reusable and inline actions to coexist', () => {
+    type CounterState = { count: number }
+
+    const add = createAction<CounterState, [value: number]>(
+      ({ setState }, value) => {
+        setState((prev) => ({
+          count: prev.count + value,
+        }))
+      },
+    )
+
+    const builder = createStore<CounterState>({ count: 1 }).extend(
+      actions(({ getState, setState }) => ({
+        add,
+        reset() {
+          const nextCount = getState().count > 0 ? 0 : getState().count
+          setState(() => ({ count: nextCount }))
+        },
+      })),
+    )
+
+    const store = builder.create()
+
+    store.actions.add(4)
+    expect(store.get().count).toBe(5)
+
+    store.actions.reset()
+    expect(store.get().count).toBe(0)
   })
 
   it('returns the actions surface through useActions', () => {
