@@ -6,7 +6,7 @@ import { createStore } from '../../../core'
 import { persist } from '../plugin'
 import type {
   PersistHydrateArgs,
-  PersistRuntimePersistArgs,
+  PersistPersistArgs,
   PersistedStore,
 } from '../types'
 import {
@@ -158,7 +158,7 @@ describe('persist react bindings', () => {
   it('prefers runtime persist callbacks over declaration defaults through usePersistentStore', async () => {
     const defaultOnPersist = vi.fn(async () => {})
     const runtimeOnPersist = vi.fn(
-      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {},
     )
     const defaultHydrate = vi.fn(async () => {})
     const runtimeHydrate = vi.fn(
@@ -319,7 +319,7 @@ describe('persist react bindings', () => {
       },
     )
     const onPersist = vi.fn(
-      async (_args: PersistRuntimePersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {},
     )
 
     function Probe() {

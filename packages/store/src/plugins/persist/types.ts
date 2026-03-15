@@ -15,10 +15,21 @@ export type PersistMeta = {
 
 export type PersistHydrateArgs<TState> = {
   key: string
-  ready?: boolean
+  store: PersistedStore<TState>
+}
+
+export type PersistPersistArgs<TState> = {
+  key: string
+  previousState: TState
+  nextState: TState
+}
+
+export type PersistRuntimeOptions<TState> = {
+  key?: string
+  enabled?: boolean
   delay?: number
   hydrate?: (args: PersistHydrateArgs<TState>) => Promise<void>
-  onPersist?: (args: PersistRuntimePersistArgs<TState>) => Promise<void>
+  onPersist?: (args: PersistPersistArgs<TState>) => Promise<void>
 }
 
 export type PersistPluginOptions<TState> = {

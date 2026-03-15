@@ -4,8 +4,9 @@ import { useSelector } from '../../react'
 
 import {
   persistControllerKey,
+  type PersistHydrateArgs,
   type PersistMeta,
-  type PersistRuntimePersistArgs,
+  type PersistPersistArgs,
   type PersistRuntimeOptions,
   type PersistedStore,
 } from './types'
@@ -30,24 +31,20 @@ export function usePersistentStore<TState>(
   options: PersistRuntimeOptions<TState>,
 ): PersistentStoreResult<TState> {
   const meta = usePersistSelector(store, (currentMeta) => currentMeta)
-  const onPersist = useEffectEvent(
-    async (args: PersistRuntimePersistArgs<TState>) => {
-      if (!options.onPersist) {
-        return
-      }
+  const onPersist = useEffectEvent(async (args: PersistPersistArgs<TState>) => {
+    if (!options.onPersist) {
+      return
+    }
 
-      await options.onPersist(args)
-    },
-  )
-  const hydrate = useEffectEvent(
-    async (args: { key: string; store: PersistedStore<TState> }) => {
-      if (!options.hydrate) {
-        return
-      }
+    await options.onPersist(args)
+  })
+  const hydrate = useEffectEvent(async (args: PersistHydrateArgs<TState>) => {
+    if (!options.hydrate) {
+      return
+    }
 
-      await options.hydrate(args)
-    },
-  )
+    await options.hydrate(args)
+  })
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {

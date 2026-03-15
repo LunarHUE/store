@@ -10,10 +10,9 @@ export type {
   PersistController,
   PersistHydrateArgs,
   PersistMeta,
-  PersistPersistHandler,
+  PersistPersistArgs,
   PersistPluginOptions,
   PersistPluginSurface,
-  PersistRuntimePersistArgs,
   PersistRuntimeOptions,
   PersistedStore,
 } from './types'

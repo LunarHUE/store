@@ -3,7 +3,6 @@ import { createPersistMetaStore } from './meta-store'
 import type {
   PersistController,
   PersistMeta,
-  PersistPersistHandler,
   PersistPluginOptions,
   PersistRuntimeOptions,
   PersistedStore,
