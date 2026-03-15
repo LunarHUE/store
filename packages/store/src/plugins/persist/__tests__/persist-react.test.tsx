@@ -5,10 +5,7 @@ import { createStore } from '../../../core'
 import { useStoreSelector } from '../../../react'
 
 import { persist } from '../plugin'
-import type {
-  PersistHydrateArgs,
-  PersistPersistArgs,
-} from '../types'
+import type { PersistHydrateArgs, PersistPersistArgs } from '../types'
 import {
   PersistStoreProvider,
   PersistenceBoundary,
@@ -29,7 +26,11 @@ describe('persist react bindings', () => {
       const count = useStoreSelector(builder, (state) => state.count)
       const pending = usePersistSelector(builder, (meta) => meta.pending)
 
-      return <span>{count}:{pending ? 'pending' : 'idle'}</span>
+      return (
+        <span>
+          {count}:{pending ? 'pending' : 'idle'}
+        </span>
+      )
     }
 
     render(
@@ -306,7 +307,10 @@ describe('persist react bindings', () => {
     }
 
     render(
-      <PersistStoreProvider store={store} persist={{ key: 'declared-defaults' }}>
+      <PersistStoreProvider
+        store={store}
+        persist={{ key: 'declared-defaults' }}
+      >
         <Probe />
       </PersistStoreProvider>,
     )
@@ -476,7 +480,7 @@ describe('persist react bindings', () => {
     })
 
     await waitFor(() => {
-      expect(store.persist.metaStore.get().pending).toBe(true)
+      expect(store.persist.meta.get().pending).toBe(true)
     })
     expect(onPersist).not.toHaveBeenCalled()
   })

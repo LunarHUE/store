@@ -183,7 +183,7 @@ The persist plugin adds:
 - `store.hydrate(...)`
 - `store.persist.flush()`
 - `store.persist.hydrate(...)`
-- `store.persist.metaStore`
+- `store.persist.meta`
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
 - `usePersistSelector(builder, selector)`

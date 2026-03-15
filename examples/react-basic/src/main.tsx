@@ -11,9 +11,8 @@ import {
   PersistStoreProvider,
   persist,
   usePersistentStore,
-  usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
-import { useStore, useStoreSelector } from '@lunarhue/store/react'
+import { useSelector, useStore, useStoreSelector } from '@lunarhue/store/react'
 
 type DemoState = {
   count: number
@@ -181,13 +180,14 @@ function CountPanel() {
 }
 
 function PersistMetaPanel() {
-  const store = useStore(DemoStore)
-  const { flush } = usePersistentStore(DemoStore)
-  const persistMeta = usePersistSelector(DemoStore, (meta) => meta)
+  const { flush, store } = usePersistentStore(DemoStore)
+  // Subscribe to the meta store
+  const persistMeta = useSelector(store.persist.meta, (meta) => meta)
+
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
     await store.hydrate(DEMO_INITIAL_STATE)
-    store.persist.metaStore.setState(() => ({
+    store.persist.meta.setState(() => ({
       isHydrated: true,
       pending: false,
       persisting: false,

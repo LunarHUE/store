@@ -1,5 +1,3 @@
-import { createPersistMetaStore } from './meta-store'
-
 import type {
   PersistController,
   PersistMeta,
@@ -8,6 +6,7 @@ import type {
   PersistedStore,
 } from './types'
 import type { Store } from '../../core'
+import { createStoreInstance } from '../../core/store-instance'
 
 const DEFAULT_META: PersistMeta = {
   isHydrated: false,
@@ -38,7 +37,7 @@ export function createPersistController<TState>(
   store: Store<TState>,
   pluginOptions?: PersistPluginOptions<TState>,
 ): PersistController<TState> {
-  const metaStore = createPersistMetaStore(getInitialMeta(pluginOptions))
+  const meta = createStoreInstance(getInitialMeta(pluginOptions)).store
   const fallbackKey = `persist:${++nextGeneratedPersistKeyId}`
   let runtimeOptions: RuntimeOptions<TState> | null = null
   let subscription: { unsubscribe(): void } | null = null
@@ -66,7 +65,7 @@ export function createPersistController<TState>(
   }
 
   const updateMeta = (updater: (prev: PersistMeta) => PersistMeta) => {
-    metaStore.setState(updater)
+    meta.setState(updater)
   }
 
   const resolveRuntimeOptions = (
@@ -95,7 +94,7 @@ export function createPersistController<TState>(
     clearTimer()
     hasRequestedHydrationForKey = false
     lastObservedState = store.get()
-    metaStore.setState(() => getInitialMeta(pluginOptions))
+    meta.setState(() => getInitialMeta(pluginOptions))
   }
 
   const ensureSubscription = () => {
@@ -233,7 +232,7 @@ export function createPersistController<TState>(
   }
 
   return {
-    metaStore,
+    meta,
     connect(runtimeStore, options) {
       const resolvedOptions = resolveRuntimeOptions(options)
       runtimeOptions = resolvedOptions

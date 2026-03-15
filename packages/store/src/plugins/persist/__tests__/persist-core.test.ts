@@ -25,7 +25,7 @@ describe('persist core', () => {
 
     await store.persist.hydrate({ count: 4 })
     expect(store.get().count).toBe(4)
-    expect(store.persist.metaStore.get().isHydrated).toBe(true)
+    expect(store.persist.meta.get().isHydrated).toBe(true)
   })
 
   it('debounces persistence and flushes the latest state transition', async () => {
@@ -52,8 +52,8 @@ describe('persist core', () => {
       previousState: { count: 0 },
       nextState: { count: 2 },
     })
-    expect(store.persist.metaStore.get().pending).toBe(false)
-    expect(store.persist.metaStore.get().persisting).toBe(false)
+    expect(store.persist.meta.get().pending).toBe(false)
+    expect(store.persist.meta.get().persisting).toBe(false)
 
     disconnect()
   })
@@ -124,8 +124,8 @@ describe('persist core', () => {
     store.setState(() => ({ count: 1 }))
 
     await expect(store.persist.flush()).rejects.toThrow('persist failed')
-    expect(store.persist.metaStore.get().error).toBe(failure)
-    expect(store.persist.metaStore.get().pending).toBe(true)
+    expect(store.persist.meta.get().error).toBe(failure)
+    expect(store.persist.meta.get().pending).toBe(true)
   })
 
   it('uses declaration-time onPersist defaults when runtime onPersist is omitted', async () => {
@@ -473,8 +473,8 @@ describe('persist core', () => {
 
     await controller.hydrate({ count: 3 })
 
-    expect(controller.metaStore.get().isHydrated).toBe(true)
-    expect(controller.metaStore.get().pending).toBe(false)
+    expect(controller.meta.get().isHydrated).toBe(true)
+    expect(controller.meta.get().pending).toBe(false)
     expect(baseStore.get().count).toBe(3)
   })
 

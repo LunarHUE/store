@@ -23,7 +23,6 @@ import {
 
 export type PersistentStoreResult<TState, TPlugins = {}> = {
   store: PersistedStore<TState, TPlugins>
-  meta: PersistMeta
   flush(): Promise<void>
 }
 
@@ -88,9 +87,9 @@ function getPersistStoreContext<TState, TPlugins>(
   let context = persistContextMap.get(builder)
 
   if (!context) {
-    context = createContext<PersistentStoreResult<TState, TPlugins> | undefined>(
-      undefined,
-    )
+    context = createContext<
+      PersistentStoreResult<TState, TPlugins> | undefined
+    >(undefined)
     persistContextMap.set(builder, context)
   }
 
@@ -101,7 +100,6 @@ function usePersistentRuntime<TState, TPlugins = {}>(
   store: PersistedStore<TState, TPlugins>,
   options: PersistRuntimeOptions<TState>,
 ): PersistentStoreResult<TState, TPlugins> {
-  const meta = useSelector(store.persist.metaStore, (currentMeta) => currentMeta)
   const onPersist = useEffectEvent(async (args: PersistPersistArgs<TState>) => {
     if (!options.onPersist) {
       return
@@ -135,7 +133,6 @@ function usePersistentRuntime<TState, TPlugins = {}>(
 
   return {
     store,
-    meta,
     flush() {
       return store.persist.flush()
     },
@@ -145,7 +142,9 @@ function usePersistentRuntime<TState, TPlugins = {}>(
 export function usePersistentStore<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>,
 ): PersistentStoreResult<TState, TPlugins> {
-  const contextValue = useContext(getPersistStoreContext<TState, TPlugins>(builder))
+  const contextValue = useContext(
+    getPersistStoreContext<TState, TPlugins>(builder),
+  )
 
   if (!contextValue) {
     throw new Error(
@@ -154,16 +153,6 @@ export function usePersistentStore<TState, TPlugins>(
   }
 
   return contextValue
-}
-
-export function usePersistSelector<TState, TPlugins, TSelected>(
-  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>,
-  selector: (meta: PersistMeta) => TSelected,
-  compare?: (a: TSelected, b: TSelected) => boolean,
-): TSelected {
-  const persistentStore = usePersistentStore(builder)
-
-  return useSelector(persistentStore.store.persist.metaStore, selector, compare)
 }
 
 function usePersistenceBoundary<TState>(
@@ -209,6 +198,16 @@ function usePersistenceBoundary<TState>(
   }, [flushOnBackground])
 }
 
+interface PersistStoreProviderContentProps<TState, TPlugins> {
+  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>
+  children?: PersistStoreProviderChildren<TState, TPlugins>
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+  persist?: PersistRuntimeOptions<TState>
+  store: PersistedStore<TState, TPlugins>
+}
+
 function PersistStoreProviderContent<TState, TPlugins>({
   builder,
   flushOnBackground,
@@ -217,20 +216,12 @@ function PersistStoreProviderContent<TState, TPlugins>({
   children,
   persist,
   store,
-}: {
-  builder: StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>
-  children?: PersistStoreProviderChildren<TState, TPlugins>
-  flushOnBackground?: boolean
-  flushOnPageHide?: boolean
-  flushOnUnmount?: boolean
-  persist?: PersistRuntimeOptions<TState>
-  store: PersistedStore<TState, TPlugins>
-}) {
+}: PersistStoreProviderContentProps<TState, TPlugins>) {
   const persistentStore = usePersistentRuntime<TState, TPlugins>(
     store,
     persist ?? {},
   )
-  const context = getPersistStoreContext<TState, TPlugins>(builder)
+  const Context = getPersistStoreContext<TState, TPlugins>(builder)
 
   usePersistenceBoundary(store, {
     flushOnBackground,
@@ -241,7 +232,7 @@ function PersistStoreProviderContent<TState, TPlugins>({
   const content =
     typeof children === 'function' ? children(persistentStore) : children
 
-  return <context.Provider value={persistentStore}>{content}</context.Provider>
+  return <Context.Provider value={persistentStore}>{content}</Context.Provider>
 }
 
 export function PersistStoreProvider<TState, TPlugins = {}>(
@@ -253,7 +244,7 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
         {({ store }) => (
           <PersistStoreProviderContent
             builder={props.builder}
-            store={store as PersistedStore<TState, TPlugins>}
+            store={store}
             persist={props.persist}
             flushOnUnmount={props.flushOnUnmount}
             flushOnPageHide={props.flushOnPageHide}
@@ -279,7 +270,10 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
       {({ store }) => (
         <PersistStoreProviderContent
           builder={
-            builder as StoreBuilder<TState, TPlugins & PersistPluginSurface<TState>>
+            builder as StoreBuilder<
+              TState,
+              TPlugins & PersistPluginSurface<TState>
+            >
           }
           store={store as PersistedStore<TState, TPlugins>}
           persist={props.persist}

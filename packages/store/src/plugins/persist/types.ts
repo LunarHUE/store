@@ -39,7 +39,7 @@ export type PersistPluginOptions<TState> = {
 } & Omit<PersistRuntimeOptions<TState>, 'key'>
 
 export type PersistController<TState> = {
-  metaStore: Store<PersistMeta>
+  meta: Store<PersistMeta>
   connect(
     store: PersistedStore<TState>,
     options: PersistRuntimeOptions<TState>,
@@ -53,7 +53,7 @@ export type PersistPluginSurface<TState> = PersistBrand & {
   persist: {
     flush(): Promise<void>
     hydrate(nextState: TState): Promise<void>
-    metaStore: Store<PersistMeta>
+    meta: Store<PersistMeta>
     [persistControllerKey]: PersistController<TState>
   }
 }

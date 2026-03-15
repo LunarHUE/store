@@ -3,7 +3,6 @@ export {
   PersistStoreProvider,
   PersistenceBoundary,
   usePersistentStore,
-  usePersistSelector,
 } from './react'
 export { persistBrand } from './types'
 export type {
