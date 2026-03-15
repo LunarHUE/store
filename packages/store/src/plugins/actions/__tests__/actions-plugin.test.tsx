@@ -1,10 +1,10 @@
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
-import { createStore } from '../../../../core'
+import { createStore } from '../../../core'
 
-import { actions } from '../../plugin'
-import { useActions } from '../../react'
+import { actions } from '../plugin'
+import { useActions } from '../react'
 
 describe('actions plugin', () => {
   it('attaches typed actions outside state', () => {

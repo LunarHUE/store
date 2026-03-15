@@ -1,4 +1,4 @@
-export { actions } from './actions-plugin'
+export { actions } from './plugin'
 export { useActions } from './react'
 export { actionsBrand } from './types'
 export type {
