@@ -8,7 +8,9 @@ export { persistBrand } from './types'
 export type {
   PersistBrand,
   PersistController,
+  PersistHydrateHandler,
   PersistMeta,
+  PersistPersistHandler,
   PersistPluginOptions,
   PersistPluginSurface,
   PersistRuntimeOptions,

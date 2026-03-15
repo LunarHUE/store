@@ -33,7 +33,13 @@ export function usePersistentStore<TState>(
   options: PersistRuntimeOptions<TState>,
 ): PersistentStoreResult<TState> {
   const meta = usePersistSelector(store, (currentMeta) => currentMeta)
-  const onPersist = useEffectEvent(options.onPersist)
+  const onPersist = useEffectEvent(async (args: Parameters<NonNullable<PersistRuntimeOptions<TState>['onPersist']>>[0]) => {
+    if (!options.onPersist) {
+      return
+    }
+
+    await options.onPersist(args)
+  })
   const hydrate = useEffectEvent(async (runtimeStore: PersistedStore<TState>) => {
     if (!options.hydrate) {
       return
@@ -47,9 +53,9 @@ export function usePersistentStore<TState>(
       key: options.key,
       ready: options.ready,
       delay: options.delay,
-      onPersist(args) {
-        return onPersist(args)
-      },
+      onPersist: options.onPersist
+        ? (args) => onPersist(args)
+        : undefined,
       hydrate: options.hydrate
         ? (runtimeStore) => hydrate(runtimeStore)
         : undefined,

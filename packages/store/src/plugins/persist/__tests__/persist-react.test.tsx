@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest'
 import { createStore } from '../../../core'
 
 import { persist } from '../plugin'
+import type { PersistedStore } from '../types'
 import {
   PersistenceBoundary,
   usePersistentStore,
@@ -98,6 +99,84 @@ describe('persist react bindings', () => {
     await waitFor(() => {
       expect(screen.getByText('pending')).toBeTruthy()
     })
+  })
+
+  it('uses declaration-time persist defaults through usePersistentStore', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist,
+        hydrate: async (runtimeStore) => {
+          await runtimeStore.hydrate({ count: 2 })
+        },
+      }),
+    )
+    const store = builder.create()
+
+    function Probe() {
+      const persistentStore = usePersistentStore(store, {
+        key: 'declared-defaults',
+      })
+
+      return <span>{String(persistentStore.isHydrated)}:{persistentStore.store.get().count}</span>
+    }
+
+    render(<Probe />)
+
+    await waitFor(() => {
+      expect(screen.getByText('true:2')).toBeTruthy()
+    })
+
+    act(() => {
+      store.setState(() => ({ count: 3 }))
+    })
+
+    await waitFor(() => {
+      expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('prefers runtime persist callbacks over declaration defaults through usePersistentStore', async () => {
+    const defaultOnPersist = vi.fn(async () => {})
+    const runtimeOnPersist = vi.fn(async () => {})
+    const defaultHydrate = vi.fn(async () => {})
+    const runtimeHydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
+      await runtimeStore.hydrate({ count: 4 })
+    })
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist: defaultOnPersist,
+        hydrate: defaultHydrate,
+      }),
+    )
+    const store = builder.create()
+
+    function Probe() {
+      usePersistentStore(store, {
+        key: 'runtime-overrides',
+        onPersist: runtimeOnPersist,
+        hydrate: runtimeHydrate,
+      })
+
+      return <span>{store.get().count}</span>
+    }
+
+    render(<Probe />)
+
+    await waitFor(() => {
+      expect(screen.getByText('4')).toBeTruthy()
+    })
+
+    act(() => {
+      store.setState(() => ({ count: 5 }))
+    })
+
+    await waitFor(() => {
+      expect(runtimeOnPersist).toHaveBeenCalledTimes(1)
+    })
+
+    expect(defaultHydrate).not.toHaveBeenCalled()
+    expect(defaultOnPersist).not.toHaveBeenCalled()
   })
 
   it('flushes pending work on unmount when requested', async () => {

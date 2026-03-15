@@ -4,6 +4,7 @@ import { createStore } from '../../../core'
 
 import { createPersistController } from '../controller'
 import { persist } from '../plugin'
+import type { PersistedStore } from '../types'
 import { persistControllerKey } from '../types'
 
 describe('persist core', () => {
@@ -121,6 +122,136 @@ describe('persist core', () => {
     await expect(store.persist.flush()).rejects.toThrow('persist failed')
     expect(store.persist.metaStore.get().error).toBe(failure)
     expect(store.persist.metaStore.get().pending).toBe(true)
+  })
+
+  it('uses declaration-time onPersist defaults when runtime onPersist is omitted', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist,
+      }),
+    )
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      key: 'declared-persist',
+    })
+
+    store.setState(() => ({ count: 1 }))
+    await store.persist.flush()
+
+    expect(onPersist).toHaveBeenCalledTimes(1)
+    expect(onPersist).toHaveBeenCalledWith({
+      key: 'declared-persist',
+      previousState: { count: 0 },
+      nextState: { count: 1 },
+    })
+  })
+
+  it('prefers runtime onPersist over declaration-time defaults', async () => {
+    const defaultOnPersist = vi.fn(async () => {})
+    const runtimeOnPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist: defaultOnPersist,
+      }),
+    )
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      key: 'override-persist',
+      onPersist: runtimeOnPersist,
+    })
+
+    store.setState(() => ({ count: 1 }))
+    await store.persist.flush()
+
+    expect(defaultOnPersist).not.toHaveBeenCalled()
+    expect(runtimeOnPersist).toHaveBeenCalledTimes(1)
+  })
+
+  it('uses declaration-time hydrate defaults when runtime hydrate is omitted', async () => {
+    const hydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
+      await runtimeStore.hydrate({ count: 9 })
+    })
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        hydrate,
+        onPersist: async () => {},
+      }),
+    )
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      key: 'declared-hydrate',
+    })
+
+    await vi.waitFor(() => {
+      expect(hydrate).toHaveBeenCalledTimes(1)
+    })
+    expect(store.get().count).toBe(9)
+  })
+
+  it('prefers runtime hydrate over declaration-time defaults', async () => {
+    const defaultHydrate = vi.fn(async () => {})
+    const runtimeHydrate = vi.fn(async (runtimeStore: PersistedStore<{ count: number }>) => {
+      await runtimeStore.hydrate({ count: 7 })
+    })
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        hydrate: defaultHydrate,
+        onPersist: async () => {},
+      }),
+    )
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      key: 'override-hydrate',
+      hydrate: runtimeHydrate,
+    })
+
+    await vi.waitFor(() => {
+      expect(runtimeHydrate).toHaveBeenCalledTimes(1)
+    })
+
+    expect(defaultHydrate).not.toHaveBeenCalled()
+    expect(store.get().count).toBe(7)
+  })
+
+  it('uses declaration-time delay defaults when runtime delay is omitted', async () => {
+    vi.useFakeTimers()
+
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        delay: 50,
+        onPersist,
+      }),
+    )
+    const store = builder.create()
+
+    store.persist[persistControllerKey].connect(store, {
+      key: 'declared-delay',
+    })
+
+    store.setState(() => ({ count: 1 }))
+
+    await vi.advanceTimersByTimeAsync(49)
+    expect(onPersist).not.toHaveBeenCalled()
+
+    await vi.advanceTimersByTimeAsync(1)
+    expect(onPersist).toHaveBeenCalledTimes(1)
+  })
+
+  it('throws when neither declaration nor runtime provides onPersist', () => {
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create()
+
+    expect(() =>
+      store.persist[persistControllerKey].connect(store, {
+        key: 'missing-persist',
+      }),
+    ).toThrow(/requires onPersist/)
   })
 
   it('does not mark pending on hydration', async () => {

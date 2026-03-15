@@ -13,22 +13,32 @@ export type PersistMeta = {
   error: unknown | null
 }
 
+export type PersistHydrateHandler<TState> = (
+  store: PersistedStore<TState>,
+) => Promise<void>
+
+export type PersistPersistHandler<TState> = (args: {
+  key: string
+  previousState: TState
+  nextState: TState
+}) => Promise<void>
+
 export type PersistPluginOptions<TState> = {
   flushOnDispose?: boolean
   hydratedOnCreate?: boolean
   serializeState?: (state: TState) => TState
+  ready?: boolean
+  delay?: number
+  hydrate?: PersistHydrateHandler<TState>
+  onPersist?: PersistPersistHandler<TState>
 }
 
 export type PersistRuntimeOptions<TState> = {
   key: string
   ready?: boolean
   delay?: number
-  hydrate?: (store: PersistedStore<TState>) => Promise<void>
-  onPersist: (args: {
-    key: string
-    previousState: TState
-    nextState: TState
-  }) => Promise<void>
+  hydrate?: PersistHydrateHandler<TState>
+  onPersist?: PersistPersistHandler<TState>
 }
 
 export type PersistController<TState> = {
