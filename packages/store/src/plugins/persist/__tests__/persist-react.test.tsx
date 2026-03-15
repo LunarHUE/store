@@ -1,19 +1,19 @@
-import { act, render, screen, waitFor } from '@testing-library/react'
-import { describe, expect, it, vi } from 'vitest'
+import { act, render, screen, waitFor, cleanup } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createStore } from '../../../core'
 import { useStoreSelector } from '../../../react'
 
 import { persist } from '../plugin'
 import type { PersistHydrateArgs, PersistPersistArgs } from '../types'
-import {
-  PersistStoreProvider,
-  PersistenceBoundary,
-  usePersistentStore,
-  usePersistSelector,
-} from '../react'
+import { PersistStoreProvider, usePersistentStore } from '../react'
+import { useSelector, useStore } from '../../../react'
 
 describe('persist react bindings', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('provides a builder-owned persisted store and connects persistence', async () => {
     const onPersist = vi.fn(async () => {})
     const builder = createStore({ count: 0 }).extend(
@@ -23,8 +23,9 @@ describe('persist react bindings', () => {
     )
 
     function Probe() {
+      const store = useStore(builder)
       const count = useStoreSelector(builder, (state) => state.count)
-      const pending = usePersistSelector(builder, (meta) => meta.pending)
+      const pending = useSelector(store.persist.meta, (meta) => meta.pending)
 
       return (
         <span>
@@ -60,6 +61,14 @@ describe('persist react bindings', () => {
     )
     const store = builder.create()
 
+    function Probe() {
+      const { store } = usePersistentStore(builder)
+      const persistMeta = useSelector(store.persist.meta, (meta) => meta)
+      const count = useSelector(store, (state) => state.count)
+
+      return <span>{`${String(persistMeta.isHydrated)}:${count}`}</span>
+    }
+
     render(
       <PersistStoreProvider
         store={store}
@@ -70,11 +79,7 @@ describe('persist react bindings', () => {
           },
         }}
       >
-        {({ store: scopedStore, meta }) => (
-          <span>
-            {String(meta.isHydrated)}:{scopedStore.get().count}
-          </span>
-        )}
+        <Probe />
       </PersistStoreProvider>,
     )
 
@@ -159,12 +164,13 @@ describe('persist react bindings', () => {
     const onPersist = vi.fn(async () => {})
 
     function Probe() {
+      const persistMeta = useSelector(store.persist.meta, (meta) => meta)
       const persistentStore = usePersistentStore(builder)
 
       return (
         <span>
-          {String(persistentStore.meta.isHydrated)}:
-          {persistentStore.meta.pending ? 'pending' : 'idle'}:
+          {String(persistMeta.isHydrated)}:
+          {persistMeta.pending ? 'pending' : 'idle'}:
           {persistentStore.store.get().count}
         </span>
       )
@@ -202,15 +208,12 @@ describe('persist react bindings', () => {
       },
     )
 
-    function Probe(props: { enabled: boolean }) {
-      const persistentStore = usePersistentStore(builder)
+    function Probe() {
+      const { store } = usePersistentStore(builder)
+      const persistMeta = useSelector(store.persist.meta, (meta) => meta)
+      const count = useSelector(store, (state) => state.count)
 
-      return (
-        <span>
-          {String(persistentStore.meta.isHydrated)}:
-          {persistentStore.store.get().count}
-        </span>
-      )
+      return <span>{`${String(persistMeta.isHydrated)}:${count}`}</span>
     }
 
     const view = render(
@@ -223,7 +226,7 @@ describe('persist react bindings', () => {
           hydrate,
         }}
       >
-        <Probe enabled={false} />
+        <Probe />
       </PersistStoreProvider>,
     )
 
@@ -240,7 +243,7 @@ describe('persist react bindings', () => {
           hydrate,
         }}
       >
-        <Probe enabled />
+        <Probe />
       </PersistStoreProvider>,
     )
 
@@ -255,7 +258,8 @@ describe('persist react bindings', () => {
     const store = builder.create()
 
     function Probe() {
-      const pending = usePersistSelector(builder, (meta) => meta.pending)
+      const { store } = usePersistentStore(builder)
+      const pending = useSelector(store.persist.meta, (meta) => meta.pending)
       return <span>{pending ? 'pending' : 'idle'}</span>
     }
 
@@ -296,12 +300,16 @@ describe('persist react bindings', () => {
     const store = builder.create()
 
     function Probe() {
-      const persistentStore = usePersistentStore(builder)
+      const { store } = usePersistentStore(builder)
+      const hydrated = useSelector(
+        store.persist.meta,
+        (meta) => meta.isHydrated,
+      )
+      const count = useSelector(store, (state) => state.count)
 
       return (
         <span>
-          {String(persistentStore.meta.isHydrated)}:
-          {persistentStore.store.get().count}
+          {String(hydrated)}:{count}
         </span>
       )
     }
@@ -350,9 +358,10 @@ describe('persist react bindings', () => {
     const store = builder.create()
 
     function Probe() {
-      const persistentStore = usePersistentStore(builder)
+      const { store } = usePersistentStore(builder)
+      const count = useSelector(store, (state) => state.count)
 
-      return <span>{persistentStore.store.get().count}</span>
+      return <span>{count}</span>
     }
 
     render(
@@ -392,6 +401,7 @@ describe('persist react bindings', () => {
     const view = render(
       <PersistStoreProvider
         store={store}
+        flushOnUnmount
         persist={{
           key: 'unmount',
           enabled: true,
@@ -399,9 +409,7 @@ describe('persist react bindings', () => {
           onPersist,
         }}
       >
-        <PersistenceBoundary store={store} flushOnUnmount>
-          <span>mounted</span>
-        </PersistenceBoundary>
+        <span>mounted</span>
       </PersistStoreProvider>,
     )
 
@@ -424,6 +432,7 @@ describe('persist react bindings', () => {
     render(
       <PersistStoreProvider
         store={store}
+        flushOnPageHide
         persist={{
           key: 'pagehide',
           enabled: true,
@@ -431,9 +440,7 @@ describe('persist react bindings', () => {
           onPersist,
         }}
       >
-        <PersistenceBoundary store={store} flushOnPageHide>
-          <span>mounted</span>
-        </PersistenceBoundary>
+        <span>mounted</span>
       </PersistStoreProvider>,
     )
 
@@ -458,6 +465,7 @@ describe('persist react bindings', () => {
     render(
       <PersistStoreProvider
         store={store}
+        flushOnBackground
         persist={{
           key: 'background',
           enabled: true,
@@ -465,9 +473,7 @@ describe('persist react bindings', () => {
           onPersist,
         }}
       >
-        <PersistenceBoundary store={store} flushOnBackground>
-          <span>mounted</span>
-        </PersistenceBoundary>
+        <span>mounted</span>
       </PersistStoreProvider>,
     )
 
@@ -501,8 +507,9 @@ describe('persist react bindings', () => {
 
     function Probe() {
       const persistentStore = usePersistentStore(builder)
+      const count = useSelector(persistentStore.store, (state) => state.count)
 
-      return <span>{persistentStore.store.get().count}</span>
+      return <span>{count}</span>
     }
 
     render(
@@ -566,7 +573,7 @@ describe('persist react bindings', () => {
     )
 
     function Probe() {
-      usePersistSelector(builder, (meta) => meta.pending)
+      usePersistentStore(builder)
       return null
     }
 
