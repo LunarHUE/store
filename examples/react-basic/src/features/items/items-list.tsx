@@ -1,17 +1,18 @@
 import { useActions } from '@lunarhue/store/plugins/actions'
 import { useStore, useStoreSelector } from '@lunarhue/store/react'
 
-import { Button } from '../../components/ui/button'
-import { Card } from '../../components/ui/card'
-import { RenderBadge } from '../../components/ui/render-badge'
-import { demoStoreBuilder } from '../../store/demo-store'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { RenderBadge } from '@/components/ui/render-badge'
+import { demoStoreBuilder } from '@/store/demo-store'
 
 function RemoveItemButton({ index }: { index: number }) {
   const store = useStore(demoStoreBuilder)
   const actions = useActions(store)
 
   return (
-    <Button onClick={() => actions.removeItem(index)} variant="quiet">
+    <Button onClick={() => actions.removeItem(index)} variant="ghost">
       Remove
     </Button>
   )
@@ -21,37 +22,41 @@ export function ItemsList() {
   const items = useStoreSelector(demoStoreBuilder, (state) => state.items)
 
   return (
-    <Card className="gap-6">
-      <div className="grid gap-3">
-        <RenderBadge />
+    <Card>
+      <CardHeader className="gap-3">
+        <RenderBadge label="Items list" />
         <div className="grid gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
+          <Badge className="justify-self-start" variant="accent">
             Persisted list
-          </p>
-          <h2 className="font-serif text-3xl leading-tight tracking-[-0.04em]">
+          </Badge>
+          <CardTitle>
             List rendering stays isolated to the collection.
-          </h2>
+          </CardTitle>
         </div>
-      </div>
+      </CardHeader>
 
-      {items.length === 0 ? (
-        <div className="rounded-3xl border border-dashed border-strong bg-panel-soft px-5 py-6 text-sm leading-6 text-muted">
-          Add a few items and reload the page to verify persistence and the
-          render boundaries.
-        </div>
-      ) : (
-        <ul className="grid gap-3 overflow-y-auto max-h-[300px]">
-          {items.map((item, index) => (
-            <li
-              className="flex flex-col gap-4 rounded-3xl border border-border bg-paper px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
-              key={`${item}-${index}`}
-            >
-              <span className="text-base leading-7 text-ink">{item}</span>
-              <RemoveItemButton index={index} />
-            </li>
-          ))}
-        </ul>
-      )}
+      <CardContent>
+        {items.length === 0 ? (
+          <div className="rounded-xl border border-dashed border-border bg-muted px-5 py-6 text-sm leading-6 text-muted-foreground">
+            Add a few items and reload the page to verify persistence and the
+            render boundaries.
+          </div>
+        ) : (
+          <ul className="max-h-[265px] grid gap-3 overflow-y-auto scrollbar-thin scrollbar-thumb-border scrollbar-track-panel-soft">
+            {items.map((item, index) => (
+              <li
+                className="flex flex-col gap-4 rounded-xl border border-border bg-background px-5 py-4 sm:flex-row sm:items-center sm:justify-between"
+                key={`${item}-${index}`}
+              >
+                <span className="text-base leading-7 text-foreground">
+                  {item}
+                </span>
+                <RemoveItemButton index={index} />
+              </li>
+            ))}
+          </ul>
+        )}
+      </CardContent>
     </Card>
   )
 }

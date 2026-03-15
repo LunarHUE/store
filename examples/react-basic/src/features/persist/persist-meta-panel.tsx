@@ -4,15 +4,23 @@ import {
   usePersistentStore,
 } from '@lunarhue/store/plugins/persist'
 
-import { Button } from '../../components/ui/button'
-import { Card } from '../../components/ui/card'
-import { MetaRow } from '../../components/ui/meta-row'
-import { RenderBadge } from '../../components/ui/render-badge'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { MetaRow } from '@/components/ui/meta-row'
+import { RenderBadge } from '@/components/ui/render-badge'
+import { Separator } from '@/components/ui/separator'
 import {
   DEMO_INITIAL_STATE,
   STORAGE_KEY,
   demoStoreBuilder,
-} from '../../store/demo-store'
+} from '@/store/demo-store'
 
 const resetPersistMeta: PersistMeta = {
   error: null,
@@ -96,34 +104,39 @@ function ResetButton() {
 
 export function PersistMetaPanel() {
   return (
-    <Card className="gap-6">
-      <div className="grid gap-3">
-        <RenderBadge />
+    <Card>
+      <CardHeader className="gap-3">
+        <RenderBadge label="Persist meta" />
         <div className="grid gap-2">
-          <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
+          <Badge className="justify-self-start" variant="accent">
             Persistence
-          </p>
-          <h2 className="font-serif text-3xl leading-tight tracking-[-0.04em]">
+          </Badge>
+          <CardTitle>
             Meta fields can each subscribe to the persist store directly.
-          </h2>
-          <p className="max-w-xl text-sm leading-6 text-muted">
+          </CardTitle>
+          <CardDescription className="max-w-xl">
             Reset and flush stay as dedicated controls, while each displayed
             value reads only the persist field it renders.
-          </p>
+          </CardDescription>
         </div>
-      </div>
+      </CardHeader>
 
-      <dl className="grid">
-        <MetaRow label="Hydrated" value={<HydratedValue />} />
-        <MetaRow label="Pending" value={<PendingValue />} />
-        <MetaRow label="Persisting" value={<PersistingValue />} />
-        <MetaRow label="Last persisted" value={<LastPersistedValue />} />
-      </dl>
+      <CardContent className="grid gap-5">
+        <dl className="grid">
+          <MetaRow label="Hydrated" value={<HydratedValue />} />
+          <Separator />
+          <MetaRow label="Pending" value={<PendingValue />} />
+          <Separator />
+          <MetaRow label="Persisting" value={<PersistingValue />} />
+          <Separator />
+          <MetaRow label="Last persisted" value={<LastPersistedValue />} />
+        </dl>
 
-      <div className="flex flex-wrap gap-3">
-        <FlushButton />
-        <ResetButton />
-      </div>
+        <div className="flex flex-wrap gap-3">
+          <FlushButton />
+          <ResetButton />
+        </div>
+      </CardContent>
     </Card>
   )
 }

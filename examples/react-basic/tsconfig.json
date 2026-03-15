@@ -3,7 +3,15 @@
   "compilerOptions": {
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@lunarhue/store/core": ["../../packages/store/src/core/index.ts"],
+      "@lunarhue/store/react": ["../../packages/store/src/react/index.ts"],
+      "@lunarhue/store/plugins/actions": [
+        "../../packages/store/src/plugins/actions/index.ts"
+      ],
+      "@lunarhue/store/plugins/persist": [
+        "../../packages/store/src/plugins/persist/index.ts"
+      ]
     }
   },
   "include": ["src"]

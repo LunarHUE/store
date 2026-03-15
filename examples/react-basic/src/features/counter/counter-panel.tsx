@@ -1,19 +1,28 @@
 import { useActions } from '@lunarhue/store/plugins/actions'
-import { useStore } from '@lunarhue/store/react'
+import { useStore, useStoreSelector } from '@lunarhue/store/react'
 
-import { Button } from '../../components/ui/button'
-import { Card } from '../../components/ui/card'
-import { RenderBadge } from '../../components/ui/render-badge'
-import { demoStoreBuilder } from '../../store/demo-store'
-import { useStoreSelector } from '@lunarhue/store/react'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { RenderBadge } from '@/components/ui/render-badge'
+import { demoStoreBuilder } from '@/store/demo-store'
 
 function CountValue() {
   const count = useStoreSelector(demoStoreBuilder, (state) => state.count)
 
   return (
     <div className="grid gap-3">
-      <RenderBadge />
-      <p className="block font-serif text-7xl align-middle  text-accent sm:text-8xl">
+      <RenderBadge label="Count readout" />
+      <Badge className="justify-self-start" variant="accent">
+        Count
+      </Badge>
+      <p className="block font-serif text-7xl align-middle text-accent sm:text-8xl">
         {count}
       </p>
     </div>
@@ -37,24 +46,27 @@ function IncrementButton() {
 
 export function CounterPanel() {
   return (
-    <Card className="gap-6 bg-ink text-paper">
-      <div className="grid gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
+    <Card className="border-primary/70 bg-primary text-primary-foreground">
+      <CardHeader>
+        <Badge
+          className="justify-self-start border-white/10 bg-white/10 text-[#d8c3a0]"
+          variant="outline"
+        >
           Counter
-        </p>
-        <h2 className="font-serif text-3xl leading-tight tracking-[-0.04em]">
+        </Badge>
+        <CardTitle>
           Selector reads stay separate from action wiring.
-        </h2>
-        <p className="max-w-lg text-sm leading-6">
+        </CardTitle>
+        <CardDescription className="max-w-lg text-primary-foreground/80">
           The panel itself does not subscribe to count. The readout selects the
           number, and the button only grabs the action surface.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
 
-      <div className="grid">
+      <CardContent className="grid gap-5">
         <CountValue />
         <IncrementButton />
-      </div>
+      </CardContent>
     </Card>
   )
 }

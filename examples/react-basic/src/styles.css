@@ -3,15 +3,26 @@
 @import 'tailwindcss';
 
 :root {
+  --background: #f2eee6;
+  --foreground: #1f2d38;
+  --card: rgba(251, 248, 242, 0.94);
+  --card-foreground: #1f2d38;
+  --popover: #fffdf8;
+  --popover-foreground: #1f2d38;
+  --primary: #1f2d38;
+  --primary-foreground: #fffdf8;
+  --secondary: #eee7db;
+  --secondary-foreground: #1f2d38;
+  --muted: #ece5d9;
+  --muted-foreground: #5b676d;
   --accent: #8f5b2f;
-  --border: rgba(45, 51, 56, 0.12);
-  --strong: rgba(45, 51, 56, 0.22);
-  --ink: #1f2d38;
-  --muted: #272727;
-  --page: #f2eee6;
-  --panel: rgba(251, 248, 242, 0.94);
-  --panel-soft: #eee7db;
-  --paper: #fffdf8;
+  --accent-foreground: #fffdf8;
+  --destructive: #9f3f33;
+  --destructive-foreground: #fffdf8;
+  --border: rgba(45, 51, 56, 0.14);
+  --input: rgba(45, 51, 56, 0.18);
+  --ring: rgba(143, 91, 47, 0.28);
+  --radius: 1.5rem;
   --font-body: 'Public Sans Variable', sans-serif;
   --font-display: 'Newsreader Variable', serif;
 }
@@ -19,25 +30,39 @@
 @theme inline {
   --font-sans: var(--font-body);
   --font-serif: var(--font-display);
-  --color-accent: var(--accent);
-  --color-border: var(--border);
-  --color-strong: var(--strong);
-  --color-ink: var(--ink);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-muted: var(--muted);
-  --color-page: var(--page);
-  --color-panel: var(--panel);
-  --color-panel-soft: var(--panel-soft);
-  --color-paper: var(--paper);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 6px);
 }
 
 html {
-  background: var(--color-page);
+  background: var(--background);
 }
 
 body {
   min-height: 100vh;
-  background: var(--color-page);
-  color: var(--color-ink);
+  background: var(--background);
+  color: var(--foreground);
   font-family: var(--font-body);
   text-rendering: optimizeLegibility;
 }

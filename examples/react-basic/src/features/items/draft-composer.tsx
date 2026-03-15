@@ -1,10 +1,18 @@
 import { useActions } from '@lunarhue/store/plugins/actions'
 import { useStore, useStoreSelector } from '@lunarhue/store/react'
 
-import { Button } from '../../components/ui/button'
-import { Card } from '../../components/ui/card'
-import { RenderBadge } from '../../components/ui/render-badge'
-import { demoStoreBuilder } from '../../store/demo-store'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { RenderBadge } from '@/components/ui/render-badge'
+import { demoStoreBuilder } from '@/store/demo-store'
 
 function DraftInput() {
   const store = useStore(demoStoreBuilder)
@@ -13,12 +21,12 @@ function DraftInput() {
 
   return (
     <label className="grid gap-3">
-      <RenderBadge />
-      <span className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+      <RenderBadge label="Draft input" />
+      <Badge className="justify-self-start" variant="accent">
         Draft
-      </span>
-      <input
-        className="min-h-13 rounded-2xl border border-strong bg-paper px-4 text-base text-ink outline-none transition-colors placeholder:text-muted focus:border-accent"
+      </Badge>
+      <Input
+        className="h-[3.25rem] rounded-xl border-input bg-background"
         onChange={(event) => actions.setDraft(event.currentTarget.value)}
         placeholder="Add something worth persisting"
         value={draft}
@@ -37,11 +45,12 @@ function AddItemButton() {
 
   return (
     <div className="grid gap-3">
-      <RenderBadge />
+      <RenderBadge label="Add button" />
       <Button
         className="w-full sm:w-auto"
         disabled={!canAdd}
         onClick={() => actions.addItem()}
+        variant="accent"
       >
         Add item
       </Button>
@@ -51,24 +60,24 @@ function AddItemButton() {
 
 export function DraftComposer() {
   return (
-    <Card className="gap-6">
-      <div className="grid gap-2">
-        <p className="text-xs font-semibold uppercase tracking-[0.24em] text-accent">
+    <Card>
+      <CardHeader>
+        <Badge className="justify-self-start" variant="accent">
           Draft composer
-        </p>
-        <h2 className="font-serif text-3xl leading-tight tracking-[-0.04em]">
+        </Badge>
+        <CardTitle>
           Controls subscribe to their own state.
-        </h2>
-        <p className="max-w-xl text-sm leading-6 text-muted">
+        </CardTitle>
+        <CardDescription className="max-w-xl">
           The input selects `draft`, while the button only selects whether the
           current draft can be added. The wrapper just lays things out.
-        </p>
-      </div>
+        </CardDescription>
+      </CardHeader>
 
-      <div className="grid gap-4">
+      <CardContent className="grid gap-4">
         <DraftInput />
         <AddItemButton />
-      </div>
+      </CardContent>
     </Card>
   )
 }
