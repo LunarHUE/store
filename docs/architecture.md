@@ -108,7 +108,7 @@ The React plugin layer owns:
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
 - `usePersistSelector(builder, selector, compare?)`
-- `PersistenceBoundary`
+- `PersistenceBoundary` as a compatibility escape hatch
 
 On web:
 
