@@ -187,7 +187,7 @@ The persist plugin adds:
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
 - `usePersistSelector(builder, selector)`
-- `PersistenceBoundary`
+- `PersistenceBoundary` as a compatibility escape hatch
 
 Store declaration:
 
@@ -216,25 +216,20 @@ React wiring:
 ```tsx
 import {
   PersistStoreProvider,
-  PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
-import { useStore } from '@lunarhue/store/react'
 
 function DraftScreen() {
-  const store = useStore(DraftStore)
   const { isHydrated, flush } = usePersistentStore(DraftStore)
   const pending = usePersistSelector(DraftStore, (meta) => meta.pending)
 
   return (
-    <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>
-      <div>
-        <span>Hydrated: {String(isHydrated)}</span>
-        <span>Pending: {String(pending)}</span>
-        <button onClick={() => void flush()}>Flush</button>
-      </div>
-    </PersistenceBoundary>
+    <div>
+      <span>Hydrated: {String(isHydrated)}</span>
+      <span>Pending: {String(pending)}</span>
+      <button onClick={() => void flush()}>Flush</button>
+    </div>
   )
 }
 
@@ -242,6 +237,8 @@ function App() {
   return (
     <PersistStoreProvider
       builder={DraftStore}
+      flushOnUnmount
+      flushOnPageHide
       persist={{
         key: 'draft',
         enabled: true,
@@ -267,6 +264,9 @@ On web:
 
 - `flushOnPageHide` is implemented
 - `flushOnBackground` is accepted but currently a no-op
+
+`PersistenceBoundary` still exists for compatibility when only a sub-tree should
+own flush behavior, but the provider is the default lifecycle API now.
 
 ## How plugins work
 

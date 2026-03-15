@@ -23,7 +23,8 @@ New mental model:
 5. Replace generic state subscriptions with `useSelector(store, selector)` or `useStoreSelector(builder, selector)`.
 6. Move persistence lifecycle wiring into `PersistStoreProvider`.
 7. Read persistence state with `usePersistentStore(builder)` and `usePersistSelector(builder, selector)`.
-8. Replace ad hoc flush handling with `PersistenceBoundary` or provider-owned flush options.
+8. Move flush lifecycle options onto `PersistStoreProvider`.
+9. Keep `PersistenceBoundary` only when a nested sub-tree needs compatibility behavior.
 
 ## Example
 
@@ -51,7 +52,11 @@ const SubmissionStore = createStore<Record<string, string>>({})
 Runtime:
 
 ```ts
-<PersistStoreProvider builder={SubmissionStore} flushOnUnmount>
+<PersistStoreProvider
+  builder={SubmissionStore}
+  flushOnUnmount
+  flushOnPageHide
+>
   <SubmissionScreen />
 </PersistStoreProvider>
 ```
@@ -63,4 +68,6 @@ Runtime:
 - `useStore(builder)` is provider-only now
 - `useLocalStore(builder)` is the explicit local lifecycle API
 - persisted hooks are only available from the persist plugin export
+- `PersistStoreProvider` is the primary persistence lifecycle owner
+- `PersistenceBoundary` remains available for compatibility, but is no longer the default pattern
 - `flushOnBackground` is reserved for future non-web lifecycle support

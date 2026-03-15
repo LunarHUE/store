@@ -65,6 +65,10 @@ export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | BuilderPersistStoreProviderProps<TState, TPlugins>
   | ExternalPersistStoreProviderProps<TState, TPlugins>
 
+/**
+ * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
+ * as a compatibility escape hatch for sub-tree flush behavior.
+ */
 export type PersistenceBoundaryProps<TState> = {
   store: PersistedStore<TState>
   flushOnUnmount?: boolean
@@ -292,6 +296,10 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
   )
 }
 
+/**
+ * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
+ * as a compatibility escape hatch for sub-tree flush behavior.
+ */
 export function PersistenceBoundary<TState>({
   children,
   flushOnBackground,

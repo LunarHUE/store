@@ -20,7 +20,12 @@ The prototype was delivered in small issue-scoped branches that merged into the 
    Added debounced persistence, hydration, flush semantics, and the persistence meta store.
 
 6. Persist React bindings and boundary
-   Added `usePersistentStore`, `usePersistSelector`, and `PersistenceBoundary`.
+   Added the initial persist React bindings and lifecycle helpers.
+
+8. Persist provider refactor
+   Moved persistence lifecycle ownership into `PersistStoreProvider`, made
+   persist hooks builder-first and provider-scoped, and left
+   `PersistenceBoundary` as a compatibility escape hatch.
 
 7. Example, docs, and package hardening
    Added the public API example, implementation-backed docs, and export smoke coverage.

@@ -132,7 +132,6 @@ actions.increment()
 import {
   persist,
   PersistStoreProvider,
-  PersistenceBoundary,
   usePersistentStore,
   usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
@@ -159,8 +158,6 @@ defaults when present.
 React runtime wiring:
 
 ```ts
-const store = useStore(SubmissionStore)
-
 const persistentStore = usePersistentStore(SubmissionStore)
 const pending = usePersistSelector(SubmissionStore, (meta) => meta.pending)
 ```
@@ -184,14 +181,14 @@ const pending = usePersistSelector(SubmissionStore, (meta) => meta.pending)
 Boundary:
 
 ```tsx
-<PersistenceBoundary
-  store={store}
+<PersistStoreProvider
+  builder={SubmissionStore}
   flushOnUnmount
   flushOnPageHide
   flushOnBackground
 >
-  {children}
-</PersistenceBoundary>
+  <SubmissionScreen />
+</PersistStoreProvider>
 ```
 
 `usePersistentStore(builder)` returns:
@@ -200,3 +197,7 @@ Boundary:
 - `meta`
 - `isHydrated`
 - `flush()`
+
+`PersistenceBoundary` is still exported as a compatibility escape hatch when
+only a nested sub-tree should own flush behavior, but `PersistStoreProvider` is
+the primary lifecycle API.
