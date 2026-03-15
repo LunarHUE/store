@@ -21,11 +21,11 @@ type StoreBuilder<TState, TPlugins = {}> = {
 
 Runtime store API:
 
-```ts
-type Store<TState, TPlugins = {}> = TanStackStore<TState> & {
-  dispose(): Promise<void>
-} & TPlugins
-```
+`Store<TState, TPlugins>` is the runtime TanStack store instance returned by
+`.create()`, plus:
+
+- `dispose(): Promise<void>`
+- any attached plugin surface in `TPlugins`
 
 Notes:
 
@@ -133,7 +133,6 @@ import {
   persist,
   PersistStoreProvider,
   usePersistentStore,
-  usePersistSelector,
 } from '@lunarhue/store/plugins/persist'
 ```
 
@@ -194,7 +193,6 @@ Boundary:
 `usePersistentStore(builder)` returns:
 
 - `store`
-- `meta`
 - `flush()`
 
 `PersistenceBoundary` is still exported as a compatibility escape hatch when
