@@ -34,27 +34,29 @@ export function usePersistentStore<TState>(
 ): PersistentStoreResult<TState> {
   const meta = usePersistSelector(store, (currentMeta) => currentMeta)
   const onPersist = useEffectEvent(options.onPersist)
-  const hydrate = useEffectEvent(async (runtimeStore: PersistedStore<TState>) => {
-    if (!options.hydrate) {
-      return
-    }
+  const hydrate = useEffectEvent(
+    async (args: { key: string; store: PersistedStore<TState> }) => {
+      if (!options.hydrate) {
+        return
+      }
 
-    await options.hydrate(runtimeStore)
-  })
+      await options.hydrate(args)
+    },
+  )
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {
       key: options.key,
-      ready: options.ready,
+      enabled: options.enabled,
       delay: options.delay,
       onPersist(args) {
         return onPersist(args)
       },
       hydrate: options.hydrate
-        ? (runtimeStore) => hydrate(runtimeStore)
+        ? (args) => hydrate(args)
         : undefined,
     })
-  }, [options.delay, options.key, options.ready, store, Boolean(options.hydrate)])
+  }, [options.delay, options.enabled, options.key, store, Boolean(options.hydrate)])
 
   return {
     store,
