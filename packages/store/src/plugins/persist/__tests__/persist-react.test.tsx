@@ -69,9 +69,9 @@ describe('persist react bindings', () => {
           },
         }}
       >
-        {({ store: scopedStore, isHydrated }) => (
+        {({ store: scopedStore, meta }) => (
           <span>
-            {String(isHydrated)}:{scopedStore.get().count}
+            {String(meta.isHydrated)}:{scopedStore.get().count}
           </span>
         )}
       </PersistStoreProvider>,
@@ -162,7 +162,7 @@ describe('persist react bindings', () => {
 
       return (
         <span>
-          {String(persistentStore.isHydrated)}:
+          {String(persistentStore.meta.isHydrated)}:
           {persistentStore.meta.pending ? 'pending' : 'idle'}:
           {persistentStore.store.get().count}
         </span>
@@ -206,7 +206,7 @@ describe('persist react bindings', () => {
 
       return (
         <span>
-          {String(persistentStore.isHydrated)}:
+          {String(persistentStore.meta.isHydrated)}:
           {persistentStore.store.get().count}
         </span>
       )
@@ -299,7 +299,7 @@ describe('persist react bindings', () => {
 
       return (
         <span>
-          {String(persistentStore.isHydrated)}:
+          {String(persistentStore.meta.isHydrated)}:
           {persistentStore.store.get().count}
         </span>
       )

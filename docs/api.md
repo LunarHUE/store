@@ -198,5 +198,4 @@ Boundary:
 
 - `store`
 - `meta`
-- `isHydrated`
 - `flush()`
