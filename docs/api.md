@@ -152,14 +152,14 @@ const SubmissionStore = createStore({}).extend(
 ```
 
 Persist callbacks and debounce settings may be declared on `persist(...)` as
-defaults. Runtime config passed to `PersistStoreProvider` overrides those
+defaults. Runtime config passed to `PersistStoreProvider` overrides those  
 defaults when present.
 
 React runtime wiring:
 
 ```ts
-const persistentStore = usePersistentStore(SubmissionStore)
-const pending = usePersistSelector(SubmissionStore, (meta) => meta.pending)
+const { store } = usePersistentStore(SubmissionStore)
+const pending = useSelector(store.persist.meta, (meta) => meta.pending)
 ```
 
 ```tsx
