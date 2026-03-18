@@ -24,7 +24,11 @@ export type PersistentStoreResult<TState, TPlugins = {}> = {
   store: PersistedStore<TState, TPlugins>
   flush(): Promise<void>
 }
-
+export type PersistenceBoundaryOptions = {
+  flushOnBackground?: boolean
+  flushOnPageHide?: boolean
+  flushOnUnmount?: boolean
+}
 type PersistStoreContext<TState, TPlugins> = Context<
   PersistentStoreResult<TState, TPlugins> | undefined
 >
@@ -41,12 +45,9 @@ type PersistStoreProviderChildren<TState, TPlugins> =
 type BuilderPersistStoreProviderBaseProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
   children?: PersistStoreProviderChildren<TState, TPlugins>
-  flushOnBackground?: boolean
-  flushOnPageHide?: boolean
-  flushOnUnmount?: boolean
   persist?: PersistRuntimeOptions<TState>
   store?: never
-}
+} & PersistenceBoundaryOptions
 
 type BuilderPersistStoreProviderWithInitialStateProps<TState, TPlugins> =
   BuilderPersistStoreProviderBaseProps<TState, TPlugins> & {
@@ -79,22 +80,13 @@ type BuilderPersistStoreProviderProps<TState, TPlugins> =
 type ExternalPersistStoreProviderProps<TState, TPlugins> = {
   builder?: never
   children?: PersistStoreProviderChildren<TState, TPlugins>
-  flushOnBackground?: boolean
-  flushOnPageHide?: boolean
-  flushOnUnmount?: boolean
   persist?: PersistRuntimeOptions<TState>
   store: PersistedStore<TState, TPlugins>
-}
+} & PersistenceBoundaryOptions
 
 export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | BuilderPersistStoreProviderProps<TState, TPlugins>
   | ExternalPersistStoreProviderProps<TState, TPlugins>
-
-type PersistenceBoundaryOptions = {
-  flushOnBackground?: boolean
-  flushOnPageHide?: boolean
-  flushOnUnmount?: boolean
-}
 
 function getPersistStoreContext<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
@@ -157,12 +149,9 @@ export function usePersistentStore<TState, TPlugins>(
 
 function usePersistenceBoundary<TState>(
   store: PersistedStore<TState>,
-  {
-    flushOnBackground,
-    flushOnPageHide,
-    flushOnUnmount,
-  }: PersistenceBoundaryOptions,
+  options: PersistenceBoundaryOptions,
 ) {
+  const { flushOnUnmount, flushOnPageHide, flushOnBackground } = options
   useEffect(() => {
     if (!flushOnUnmount) {
       return
@@ -198,12 +187,12 @@ function usePersistenceBoundary<TState>(
   }, [flushOnBackground])
 }
 
-interface PersistStoreProviderContentProps<TState, TPlugins> {
+interface PersistStoreProviderContentProps<
+  TState,
+  TPlugins,
+> extends PersistenceBoundaryOptions {
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
   children?: PersistStoreProviderChildren<TState, TPlugins>
-  flushOnBackground?: boolean
-  flushOnPageHide?: boolean
-  flushOnUnmount?: boolean
   persist?: PersistRuntimeOptions<TState>
   store: InternalPersistedStore<TState, TPlugins>
 }
