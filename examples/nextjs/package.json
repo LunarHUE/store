@@ -3,11 +3,11 @@
   "version": "0.1.1",
   "private": true,
   "scripts": {
-    "dev": "bun run --cwd ../../packages/store build && next dev",
-    "build": "bun run --cwd ../../packages/store build && next build",
+    "dev": "next dev",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "typecheck": "bun run --cwd ../../packages/store build && tsc --noEmit"
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@lunarhue/store": "workspace:*",
