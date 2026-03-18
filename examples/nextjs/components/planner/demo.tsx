@@ -2,17 +2,30 @@
 
 import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
 
-import { DEMO_STORAGE_KEY, PlannerStore } from '@/lib/planner-store'
+import { DEMO_STORAGE_KEY, PlannerStore, type PlannerState } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
 import { NotesPanel } from './notes-panel'
 import { PersistencePanel } from './persistence-panel'
 import { SummaryPanel } from './summary-panel'
 
-export function PlannerDemo() {
+// Server Component usage:
+//   const data = await fetchPlannerData()  // fetch from DB, cache, etc.
+//   return <PlannerDemo initialState={data} />
+//
+// `initialState` seeds the store before the first render.
+// The persist plugin's `hydrate` callback (if configured) will run
+// after mount and can override this value if needed.
+
+type PlannerDemoProps = {
+  initialState?: PlannerState
+}
+
+export function PlannerDemo({ initialState }: PlannerDemoProps) {
   return (
     <PersistStoreProvider
       builder={PlannerStore}
+      initialState={initialState}
       persist={{ key: DEMO_STORAGE_KEY }}
       flushOnPageHide
       flushOnUnmount
