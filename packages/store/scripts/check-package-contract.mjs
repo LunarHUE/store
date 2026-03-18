@@ -143,7 +143,7 @@ const increment = createAction<CounterState>(({ setState }) => {
   setState((prev) => ({ count: prev.count + 1 }))
 })
 
-const CounterStore = createStore<CounterState>({ count: 0 })
+const CounterStore = createStore<CounterState>()
   .extend(actions(() => ({ increment })))
   .extend(persist({ onPersist: async () => {} }))
 
@@ -152,11 +152,15 @@ type CounterSnapshot = StoreState<CounterRuntime>
 
 const store: PersistedStore<CounterState, { actions: { increment(): void } }> =
   CounterStore.create()
+const initializePromise: Promise<void> = store.initialize({ count: 0 })
 const snapshot: CounterSnapshot = store.get()
+const status = store.lifecycle.meta.get().status
 const flushPromise: Promise<void> = store.persist.flush()
 
 store.actions.increment()
+void initializePromise
 void snapshot
+void status
 void flushPromise
 void StoreProvider
 void PersistStoreProvider

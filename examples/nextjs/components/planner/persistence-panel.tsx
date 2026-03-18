@@ -22,13 +22,13 @@ export function PersistencePanel() {
         <PanelHeader
           eyebrow="Persistence"
           title="Runtime status"
-          description="PersistStoreProvider hydrates from localStorage and the status row reads only the persistence meta store."
+          description="Store readiness comes from the core lifecycle, while the persistence meta store only tracks writes."
           action={<FlushNowButton />}
         />
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap gap-2">
-          <HydrationBadge />
+          <StoreStatusBadge />
           <PendingBadge />
         </div>
         <LastSavedLabel />
@@ -38,13 +38,13 @@ export function PersistencePanel() {
   )
 }
 
-function HydrationBadge() {
+function StoreStatusBadge() {
   const { store } = usePlannerPersistentStore()
-  const isHydrated = useSelector(store.persist.meta, (meta) => meta.isHydrated)
+  const status = store.lifecycle.meta.get().status
 
   return (
-    <Badge variant={isHydrated ? 'default' : 'outline'}>
-      {isHydrated ? 'Hydrated' : 'Waiting to hydrate'}
+    <Badge variant={status === 'ready' ? 'default' : 'outline'}>
+      {status === 'ready' ? 'Ready' : status}
     </Badge>
   )
 }

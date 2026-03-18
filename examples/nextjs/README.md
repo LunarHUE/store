@@ -5,6 +5,7 @@ It demonstrates:
 
 - `actions(...)` for typed mutations
 - `persist(...)` with `PersistStoreProvider`
+- provider-managed store initialization from SSR props or client cookies
 - selector-first component boundaries, where badges, buttons, totals, and sync
   indicators subscribe at the leaf instead of in a broad parent
 - Tailwind 4 styling with a restrained, editorial UI

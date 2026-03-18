@@ -2,6 +2,7 @@
 
 import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
 
+import { getPlannerStateFromClientCookies } from '@/lib/cookies'
 import { PlannerStore, type PlannerState } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
@@ -14,8 +15,7 @@ import { SummaryPanel } from './summary-panel'
 //   return <PlannerDemo initialState={data} />
 //
 // `initialState` seeds the store before the first render.
-// The persist plugin's `hydrate` callback (if configured) will run
-// after mount and can override this value if needed.
+// When it is omitted, the provider initializes the store from client cookies.
 
 type PlannerDemoProps = {
   initialState?: PlannerState
@@ -26,6 +26,9 @@ export function PlannerDemo({ initialState }: PlannerDemoProps) {
     <PersistStoreProvider
       builder={PlannerStore}
       initialState={initialState}
+      initialize={async ({ store }) => {
+        await store.initialize(getPlannerStateFromClientCookies())
+      }}
       flushOnPageHide
       flushOnUnmount
     >

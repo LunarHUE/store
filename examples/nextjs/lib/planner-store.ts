@@ -144,14 +144,13 @@ const plannerActions = {
   ),
 }
 
-export const PlannerStore = createStore<PlannerState>({} as PlannerState)
+export const PlannerStore = createStore<PlannerState>()
   .extend(actions(() => plannerActions))
   .extend(
     persist({
       delay: 10000,
       flushOnDispose: true,
-      // Since we are using SSR to set the initial state, we can say that this is hydrated on create
-      // hydratedOnCreate: true,
+
       async onPersist({ nextState }) {
         console.log('onPersist', nextState)
         await new Promise((resolve) => setTimeout(resolve, 10000))

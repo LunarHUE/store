@@ -1,5 +1,16 @@
 # @lunarhue/store
 
+## Unreleased
+
+### Minor Changes
+
+- Move store readiness into the core runtime with `store.initialize(...)` and
+  `store.lifecycle.meta`, so builders can be declared as `createStore<TState>()`
+  without fake initial values.
+- Reduce the persist plugin to persistence-only behavior by removing its
+  hydration APIs and keeping `PersistStoreProvider` focused on persistence
+  wiring.
+
 ## 0.2.0
 
 ### Minor Changes
