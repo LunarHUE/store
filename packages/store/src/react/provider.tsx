@@ -13,6 +13,7 @@ import type {
   ReadableStore,
   Store,
   StoreBuilder,
+  StoreInitialStateLoader,
   StoreLifecycleMeta,
 } from '../core'
 
@@ -20,17 +21,42 @@ type StoreProviderChildren<TState, TPlugins> =
   | ReactNode
   | ((args: { store: Store<TState, TPlugins> }) => ReactNode)
 
-type StoreInitializer<TState, TPlugins> = (args: {
-  store: Store<TState, TPlugins>
-}) => Promise<void>
-
-type BuilderProviderProps<TState, TPlugins> = {
+type BuilderProviderBaseProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins>
   children?: StoreProviderChildren<TState, TPlugins>
   hasInitialState?: boolean
-  initialize?: StoreInitializer<TState, TPlugins>
-  initialState?: TState
   store?: never
+}
+
+type BuilderProviderWithInitialStateProps<TState, TPlugins> =
+  BuilderProviderBaseProps<TState, TPlugins> & {
+    initialState: TState
+    loadInitialState?: never
+  }
+
+type BuilderProviderWithLoadInitialStateProps<TState, TPlugins> =
+  BuilderProviderBaseProps<TState, TPlugins> & {
+    initialState?: never
+    loadInitialState: StoreInitialStateLoader<TState, TPlugins>
+  }
+
+type BuilderProviderWithDeclaredInitialStateProps<TState, TPlugins> =
+  BuilderProviderBaseProps<TState, TPlugins> & {
+    initialState?: never
+    loadInitialState?: never
+  }
+
+type BuilderProviderProps<TState, TPlugins> =
+  | BuilderProviderWithDeclaredInitialStateProps<TState, TPlugins>
+  | BuilderProviderWithInitialStateProps<TState, TPlugins>
+  | BuilderProviderWithLoadInitialStateProps<TState, TPlugins>
+
+type BuilderOwnedStoreProviderProps<TState, TPlugins> = {
+  builder: StoreBuilder<TState, TPlugins>
+  children?: StoreProviderChildren<TState, TPlugins>
+  hasInitialState: boolean
+  initialState?: TState
+  loadInitialState?: StoreInitialStateLoader<TState, TPlugins>
 }
 
 type StoreProviderProps<TState, TPlugins> = {
@@ -39,7 +65,7 @@ type StoreProviderProps<TState, TPlugins> = {
   store: Store<TState, TPlugins>
 }
 
-export type ProviderProps<TState, TPlugins> =
+export type ProviderProps<TState, TPlugins = {}> =
   | BuilderProviderProps<TState, TPlugins>
   | StoreProviderProps<TState, TPlugins>
 
@@ -51,8 +77,8 @@ export function StoreProvider<TState, TPlugins>(
       <BuilderOwnedStoreProvider
         builder={props.builder}
         hasInitialState={'initialState' in props}
-        initialize={props.initialize}
         initialState={props.initialState}
+        loadInitialState={props.loadInitialState}
       >
         {props.children}
       </BuilderOwnedStoreProvider>
@@ -86,9 +112,9 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   builder,
   children,
   hasInitialState,
-  initialize,
   initialState,
-}: BuilderProviderProps<TState, TPlugins>) {
+  loadInitialState,
+}: BuilderOwnedStoreProviderProps<TState, TPlugins>) {
   const context = getStoreContext(builder)
   const builderRef = useRef<StoreBuilder<TState, TPlugins> | null>(null)
   const initializeStartedRef = useRef(false)
@@ -118,7 +144,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   const initializeStore = useEffectEvent(async () => {
     const ownedStore = storeRef.current
 
-    if (!ownedStore || !initialize) {
+    if (!ownedStore || !loadInitialState) {
       return
     }
 
@@ -129,15 +155,8 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
     }))
 
     try {
-      await initialize({ store: ownedStore })
-
-      const nextMeta = ownedStore.lifecycle.meta.get()
-
-      if (nextMeta.status === 'uninitialized') {
-        throw new Error(
-          'StoreProvider initialize callback must call store.initialize(...) before it resolves.',
-        )
-      }
+      const nextState = await loadInitialState({ store: ownedStore })
+      await ownedStore.setInitialState(nextState)
     } catch (error) {
       updateLifecycleMeta(ownedStore, () => ({
         status: 'error',
@@ -175,14 +194,14 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
       !ownedStore ||
       initializeStartedRef.current ||
       ownedStore.lifecycle.meta.get().status !== 'uninitialized' ||
-      !initialize
+      !loadInitialState
     ) {
       return
     }
 
     initializeStartedRef.current = true
     void initializeStore()
-  }, [initialize, initializeStore])
+  }, [loadInitialState, initializeStore])
 
   const ownedStore = storeRef.current
   const lifecycleMeta = ownedStore.lifecycle.meta.get()
@@ -191,9 +210,9 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
     throw lifecycleMeta.error ?? new Error('Store initialization failed.')
   }
 
-  if (lifecycleMeta.status === 'uninitialized' && !initialize) {
+  if (lifecycleMeta.status === 'uninitialized' && !loadInitialState) {
     throw new Error(
-      'StoreProvider requires initialState or initialize when the builder has no declared initial state.',
+      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.',
     )
   }
 

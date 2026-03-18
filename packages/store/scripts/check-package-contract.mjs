@@ -134,8 +134,8 @@ function writeTypeFixtures() {
     consumerFixturePath,
     `import { createStore, type StoreState } from '@lunarhue/store/core'
 import { actions, createAction, useActions } from '@lunarhue/store/plugins/actions'
-import { PersistStoreProvider, persist, type PersistedStore, usePersistentStore } from '@lunarhue/store/plugins/persist'
-import { StoreProvider, useLocalStore, useSelector, useStore, useStoreSelector } from '@lunarhue/store/react'
+import { PersistStoreProvider, persist, type PersistStoreProviderProps, type PersistedStore, usePersistentStore } from '@lunarhue/store/plugins/persist'
+import { StoreProvider, type StoreProviderProps, useLocalStore, useSelector, useStore, useStoreSelector } from '@lunarhue/store/react'
 
 type CounterState = { count: number }
 
@@ -152,16 +152,47 @@ type CounterSnapshot = StoreState<CounterRuntime>
 
 const store: PersistedStore<CounterState, { actions: { increment(): void } }> =
   CounterStore.create()
-const initializePromise: Promise<void> = store.initialize({ count: 0 })
+const initializePromise: Promise<void> = store.setInitialState({ count: 0 })
 const snapshot: CounterSnapshot = store.get()
 const status = store.lifecycle.meta.get().status
 const flushPromise: Promise<void> = store.persist.flush()
+const providerInitialStateProps: StoreProviderProps<CounterState> = {
+  builder: CounterStore,
+  initialState: { count: 1 },
+}
+const providerLoadInitialStateProps: StoreProviderProps<CounterState> = {
+  builder: CounterStore,
+  loadInitialState: async () => ({ count: 2 }),
+}
+const persistProviderInitialStateProps: PersistStoreProviderProps<CounterState> = {
+  builder: CounterStore,
+  initialState: { count: 3 },
+}
+const persistProviderLoadInitialStateProps: PersistStoreProviderProps<CounterState> = {
+  builder: CounterStore,
+  loadInitialState: async () => ({ count: 4 }),
+}
+useLocalStore(CounterStore, {
+  loadInitialState: async () => ({ count: 5 }),
+})
+// @ts-expect-error initialState and loadInitialState are mutually exclusive
+const invalidProviderProps: StoreProviderProps<CounterState> = { builder: CounterStore, initialState: { count: 6 }, loadInitialState: async () => ({ count: 7 }) }
+// @ts-expect-error initialState and loadInitialState are mutually exclusive
+const invalidPersistProviderProps: PersistStoreProviderProps<CounterState> = { builder: CounterStore, initialState: { count: 8 }, loadInitialState: async () => ({ count: 9 }) }
+// @ts-expect-error initialState and loadInitialState are mutually exclusive
+useLocalStore(CounterStore, { initialState: { count: 10 }, loadInitialState: async () => ({ count: 11 }) })
 
 store.actions.increment()
 void initializePromise
 void snapshot
 void status
 void flushPromise
+void providerInitialStateProps
+void providerLoadInitialStateProps
+void persistProviderInitialStateProps
+void persistProviderLoadInitialStateProps
+void invalidProviderProps
+void invalidPersistProviderProps
 void StoreProvider
 void PersistStoreProvider
 void useActions

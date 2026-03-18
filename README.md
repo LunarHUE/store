@@ -50,7 +50,7 @@ store.setState((prev) => ({
 await store.dispose()
 ```
 
-You can also declare a builder without a default state and initialize it later:
+You can also declare a builder without a default state and set its initial state later:
 
 ```ts
 type DraftState = { body: string }
@@ -58,7 +58,7 @@ type DraftState = { body: string }
 const DraftStore = createStore<DraftState>()
 
 const draftStore = DraftStore.create()
-await draftStore.initialize({ body: '' })
+await draftStore.setInitialState({ body: '' })
 ```
 
 Why the builder exists:
@@ -122,7 +122,7 @@ function App() {
 `useStore(builder)` is provider-only. If no matching provider exists, it throws.
 
 If a builder has no declaration-time state, `StoreProvider` can make it ready
-with either `initialState` or `initialize`:
+with either `initialState` or `loadInitialState`:
 
 ```tsx
 const CounterStore = createStore<{ count: number }>()
@@ -131,9 +131,7 @@ function App() {
   return (
     <StoreProvider
       builder={CounterStore}
-      initialize={async ({ store }) => {
-        await store.initialize({ count: 0 })
-      }}
+      loadInitialState={async () => ({ count: 0 })}
     >
       <CounterValue />
     </StoreProvider>
@@ -221,7 +219,7 @@ function IncrementButton() {
 
 The core store adds:
 
-- `store.initialize(...)`
+- `store.setInitialState(...)`
 - `store.lifecycle.meta`
 
 The persist plugin adds:
@@ -280,12 +278,10 @@ function App() {
       builder={DraftStore}
       flushOnUnmount
       flushOnPageHide
-      initialize={async ({ store }) => {
+      loadInitialState={async () => {
         const serialized = window.localStorage.getItem('draft')
 
-        await store.initialize(
-          serialized ? JSON.parse(serialized) : { body: '' },
-        )
+        return serialized ? JSON.parse(serialized) : { body: '' }
       }}
       persist={{
         key: 'draft',

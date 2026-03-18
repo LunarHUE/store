@@ -2,7 +2,7 @@ import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createStore } from '../src/core'
-import { StoreProvider, useLocalStore, useStore } from '../src/react'
+import { StoreProvider, useLocalStore, useSelector, useStore } from '../src/react'
 
 type CounterState = { count: number }
 
@@ -11,16 +11,17 @@ describe('StoreProvider initialization', () => {
     cleanup()
   })
 
-  it('runs initialize once when no initialState is provided', async () => {
+  it('runs loadInitialState once when no initialState is provided', async () => {
     const builder = createStore<CounterState>()
-    let resolveInitialize!: () => void
-    const initializeGate = new Promise<void>((resolve) => {
-      resolveInitialize = resolve
+    let resolveLoad!: () => void
+    const loadGate = new Promise<void>((resolve) => {
+      resolveLoad = resolve
     })
-    const initialize = vi.fn(
+    const loadInitialState = vi.fn(
       async ({ store }: { store: ReturnType<typeof builder.create> }) => {
-        await initializeGate
-        await store.initialize({ count: 5 })
+        expect(store.lifecycle.meta.get().status).toBe('initializing')
+        await loadGate
+        return { count: 5 }
       },
     )
 
@@ -30,28 +31,23 @@ describe('StoreProvider initialization', () => {
     }
 
     render(
-      <StoreProvider builder={builder} initialize={initialize}>
+      <StoreProvider builder={builder} loadInitialState={loadInitialState}>
         <Probe />
       </StoreProvider>,
     )
 
     expect(screen.queryByText('5')).toBeNull()
-    expect(initialize).toHaveBeenCalledTimes(1)
+    expect(loadInitialState).toHaveBeenCalledTimes(1)
 
-    resolveInitialize()
+    resolveLoad()
 
     await waitFor(() => {
       expect(screen.getByText('5')).toBeTruthy()
     })
   })
 
-  it('skips initialize when initialState is provided', () => {
+  it('starts ready when initialState is provided', () => {
     const builder = createStore<CounterState>()
-    const initialize = vi.fn(
-      async ({ store }: { store: ReturnType<typeof builder.create> }) => {
-        await store.initialize({ count: 8 })
-      },
-    )
 
     function Probe() {
       const store = useStore(builder)
@@ -62,17 +58,15 @@ describe('StoreProvider initialization', () => {
       <StoreProvider
         builder={builder}
         initialState={{ count: 2 }}
-        initialize={initialize}
       >
         <Probe />
       </StoreProvider>,
     )
 
     expect(screen.getByText('2')).toBeTruthy()
-    expect(initialize).not.toHaveBeenCalled()
   })
 
-  it('throws when an uninitialized builder has no initialState or initialize callback', () => {
+  it('throws when an uninitialized builder has no initialState or loadInitialState callback', () => {
     const builder = createStore<CounterState>()
 
     function Probe() {
@@ -87,7 +81,7 @@ describe('StoreProvider initialization', () => {
         </StoreProvider>,
       ),
     ).toThrow(
-      'StoreProvider requires initialState or initialize when the builder has no declared initial state.',
+      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.',
     )
   })
 })
@@ -97,19 +91,28 @@ describe('useLocalStore initialization', () => {
     cleanup()
   })
 
-  it('supports local initialization for builders without defaults', () => {
+  it('supports local initial state loading for builders without defaults', async () => {
     const builder = createStore<CounterState>()
+    const loadInitialState = vi.fn(async () => ({ count: 11 }))
 
     function Probe() {
       const store = useLocalStore(builder, {
-        initialState: { count: 11 },
+        loadInitialState,
       })
+      const status = useSelector(store.lifecycle.meta, (meta) => meta.status)
+
+      if (status !== 'ready') {
+        return <span>{status}</span>
+      }
 
       return <span>{store.get().count}</span>
     }
 
     render(<Probe />)
 
-    expect(screen.getByText('11')).toBeTruthy()
+    await waitFor(() => {
+      expect(screen.getByText('11')).toBeTruthy()
+    })
+    expect(loadInitialState).toHaveBeenCalledTimes(1)
   })
 })

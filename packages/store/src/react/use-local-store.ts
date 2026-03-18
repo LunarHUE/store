@@ -1,13 +1,33 @@
 import { useEffect, useEffectEvent, useRef } from 'react'
 
-import type { Store, StoreBuilder } from '../core'
+import type { Store, StoreBuilder, StoreInitialStateLoader } from '../core'
+
+type LocalStoreOptionsBase = {}
+
+type LocalStoreWithInitialStateOptions<TState> = LocalStoreOptionsBase & {
+  initialState: TState
+  loadInitialState?: never
+}
+
+type LocalStoreWithLoadInitialStateOptions<TState, TPlugins> =
+  LocalStoreOptionsBase & {
+    initialState?: never
+    loadInitialState: StoreInitialStateLoader<TState, TPlugins>
+  }
+
+type LocalStoreDeclaredInitialStateOptions = LocalStoreOptionsBase & {
+  initialState?: never
+  loadInitialState?: never
+}
+
+type LocalStoreOptions<TState, TPlugins> =
+  | LocalStoreDeclaredInitialStateOptions
+  | LocalStoreWithInitialStateOptions<TState>
+  | LocalStoreWithLoadInitialStateOptions<TState, TPlugins>
 
 export function useLocalStore<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins>,
-  options?: {
-    initialState?: TState
-    initialize?: (args: { store: Store<TState, TPlugins> }) => Promise<void>
-  },
+  options?: LocalStoreOptions<TState, TPlugins>,
 ): Store<TState, TPlugins> {
   const initializeStartedRef = useRef(false)
   const localStoreRef = useRef<Store<TState, TPlugins> | null>(null)
@@ -24,11 +44,12 @@ export function useLocalStore<TState, TPlugins>(
   const initializeStore = useEffectEvent(async () => {
     const localStore = localStoreRef.current
 
-    if (!localStore || !options?.initialize) {
+    if (!localStore || !options?.loadInitialState) {
       return
     }
 
-    await options.initialize({ store: localStore })
+    const nextState = await options.loadInitialState({ store: localStore })
+    await localStore.setInitialState(nextState)
   })
 
   useEffect(() => {
@@ -38,7 +59,7 @@ export function useLocalStore<TState, TPlugins>(
       localStore &&
       !initializeStartedRef.current &&
       localStore.lifecycle.meta.get().status === 'uninitialized' &&
-      options?.initialize
+      options?.loadInitialState
     ) {
       initializeStartedRef.current = true
       void initializeStore()
@@ -51,7 +72,7 @@ export function useLocalStore<TState, TPlugins>(
 
       void localStore.dispose()
     }
-  }, [initializeStore, options?.initialize])
+  }, [initializeStore, options?.loadInitialState])
 
   return localStoreRef.current
 }

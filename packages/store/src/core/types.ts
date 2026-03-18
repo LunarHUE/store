@@ -20,8 +20,12 @@ export type StoreLifecycleMeta = {
   error: unknown | null
 }
 
+export type StoreInitialStateLoader<TState, TPlugins = {}> = (args: {
+  store: Store<TState, TPlugins>
+}) => Promise<TState> | TState
+
 export type StoreLifecycleSurface<TState> = {
-  initialize(nextState: TState): Promise<void>
+  setInitialState(nextState: TState): Promise<void>
   lifecycle: {
     meta: ReadableStore<StoreLifecycleMeta>
   }

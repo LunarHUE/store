@@ -50,12 +50,7 @@ function CounterValue() {
 
 function App() {
   return (
-    <StoreProvider
-      builder={CounterStore}
-      initialize={async ({ store }) => {
-        await store.initialize({ count: 0 })
-      }}
-    >
+    <StoreProvider builder={CounterStore} loadInitialState={async () => ({ count: 0 })}>
       <CounterValue />
     </StoreProvider>
   )

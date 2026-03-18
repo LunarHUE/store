@@ -26,7 +26,7 @@ Runtime store API:
 `.create()`, plus:
 
 - `dispose(): Promise<void>`
-- `initialize(nextState): Promise<void>`
+- `setInitialState(nextState): Promise<void>`
 - `lifecycle.meta`
 - any attached plugin surface in `TPlugins`
 
@@ -77,9 +77,7 @@ Provider usage:
 
 <StoreProvider
   builder={SubmissionStore}
-  initialize={async ({ store }) => {
-    await store.initialize(serverState)
-  }}
+  loadInitialState={async () => serverState}
 >
   <Child />
 </StoreProvider>
@@ -176,12 +174,10 @@ const pending = useSelector(store.persist.meta, (meta) => meta.pending)
 ```tsx
 <PersistStoreProvider
   builder={SubmissionStore}
-  initialize={async ({ store }) => {
+  loadInitialState={async () => {
     const serialized = window.localStorage.getItem('submission')
 
-    await store.initialize(
-      serialized ? JSON.parse(serialized) : { body: '' },
-    )
+    return serialized ? JSON.parse(serialized) : { body: '' }
   }}
   persist={{
     key: 'submission',

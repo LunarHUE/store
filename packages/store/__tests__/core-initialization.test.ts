@@ -16,14 +16,22 @@ describe('core store initialization', () => {
     )
   })
 
-  it('becomes ready after initialize is called', async () => {
+  it('becomes ready after setInitialState is called', async () => {
     const builder = createStore<CounterState>()
     const store = builder.create()
 
-    await store.initialize({ count: 3 })
+    await store.setInitialState({ count: 3 })
 
     expect(store.lifecycle.meta.get().status).toBe('ready')
     expect(store.get()).toEqual({ count: 3 })
+  })
+
+  it('rejects attempts to set the initial state after the store is ready', async () => {
+    const store = createStore({ count: 0 }).create()
+
+    await expect(store.setInitialState({ count: 3 })).rejects.toThrow(
+      'Store initial state has already been set.',
+    )
   })
 
   it('starts ready when the builder declares a default state', () => {
@@ -50,7 +58,7 @@ describe('core store initialization', () => {
       seen.push(value)
     })
 
-    await store.initialize({ count: 7 })
+    await store.setInitialState({ count: 7 })
     subscription.unsubscribe()
 
     expect(seen).toEqual([{ count: 7 }])

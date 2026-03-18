@@ -36,8 +36,9 @@ describe('persist react bindings', () => {
     render(
       <PersistStoreProvider
         builder={builder}
-        initialize={async ({ store }) => {
-          await store.initialize({ count: 4 })
+        loadInitialState={async ({ store }) => {
+          expect(store.lifecycle.meta.get().status).toBe('initializing')
+          return { count: 4 }
         }}
         persist={{
           key: 'provider-builder',

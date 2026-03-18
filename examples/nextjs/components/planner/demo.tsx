@@ -26,9 +26,6 @@ export function PlannerDemo({ initialState }: PlannerDemoProps) {
     <PersistStoreProvider
       builder={PlannerStore}
       initialState={initialState}
-      initialize={async ({ store }) => {
-        await store.initialize(getPlannerStateFromClientCookies())
-      }}
       flushOnPageHide
       flushOnUnmount
     >

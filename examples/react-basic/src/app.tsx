@@ -14,9 +14,7 @@ export function App() {
       flushOnUnmount
       flushOnPageHide
       flushOnBackground
-      initialize={async ({ store }) => {
-        await store.initialize(readDemoStateFromStorage())
-      }}
+      loadInitialState={async () => readDemoStateFromStorage()}
     >
       <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 sm:py-10">
         <div className="mx-auto grid max-w-6xl gap-6 lg:gap-8">

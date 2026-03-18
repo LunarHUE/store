@@ -131,10 +131,14 @@ export function createStoreInstance<TState>({
       enumerable: true,
       value: subscribe,
     },
-    initialize: {
+    setInitialState: {
       configurable: true,
       enumerable: true,
       value: async (nextState: TState) => {
+        if (nativeGet() !== UNINITIALIZED) {
+          throw new Error('Store initial state has already been set.')
+        }
+
         nativeSetState(() => nextState)
         lifecycleMeta.setState(() => ({
           status: 'ready',

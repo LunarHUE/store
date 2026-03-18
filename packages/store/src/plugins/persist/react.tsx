@@ -7,7 +7,7 @@ import {
   useEffectEvent,
 } from 'react'
 
-import type { StoreBuilder } from '../../core'
+import type { StoreBuilder, StoreInitialStateLoader } from '../../core'
 import { getStoreBuilder } from '../../core/builder-registry'
 import { StoreProvider } from '../../react'
 
@@ -38,19 +38,43 @@ type PersistStoreProviderChildren<TState, TPlugins> =
   | ReactNode
   | ((args: PersistentStoreResult<TState, TPlugins>) => ReactNode)
 
-type BuilderPersistStoreProviderProps<TState, TPlugins> = {
+type BuilderPersistStoreProviderBaseProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface<TState>>
   children?: PersistStoreProviderChildren<TState, TPlugins>
   flushOnBackground?: boolean
   flushOnPageHide?: boolean
   flushOnUnmount?: boolean
-  initialize?: (args: {
-    store: PersistedStore<TState, TPlugins>
-  }) => Promise<void>
-  initialState?: TState
   persist?: PersistRuntimeOptions<TState>
   store?: never
 }
+
+type BuilderPersistStoreProviderWithInitialStateProps<TState, TPlugins> =
+  BuilderPersistStoreProviderBaseProps<TState, TPlugins> & {
+    initialState: TState
+    loadInitialState?: never
+  }
+
+type BuilderPersistStoreProviderWithLoadInitialStateProps<TState, TPlugins> =
+  BuilderPersistStoreProviderBaseProps<TState, TPlugins> & {
+    initialState?: never
+    loadInitialState: StoreInitialStateLoader<
+      TState,
+      TPlugins & PersistStoreSurface<TState>
+    >
+  }
+
+type BuilderPersistStoreProviderWithDeclaredInitialStateProps<
+  TState,
+  TPlugins,
+> = BuilderPersistStoreProviderBaseProps<TState, TPlugins> & {
+  initialState?: never
+  loadInitialState?: never
+}
+
+type BuilderPersistStoreProviderProps<TState, TPlugins> =
+  | BuilderPersistStoreProviderWithDeclaredInitialStateProps<TState, TPlugins>
+  | BuilderPersistStoreProviderWithInitialStateProps<TState, TPlugins>
+  | BuilderPersistStoreProviderWithLoadInitialStateProps<TState, TPlugins>
 
 type ExternalPersistStoreProviderProps<TState, TPlugins> = {
   builder?: never
@@ -216,34 +240,41 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
   props: PersistStoreProviderProps<TState, TPlugins>,
 ) {
   if (props.builder !== undefined) {
-    const storeProviderProps =
-      'initialState' in props
-        ? {
-            builder: props.builder,
-            initialize: props.initialize,
-            initialState: props.initialState,
-          }
-        : {
-            builder: props.builder,
-            initialize: props.initialize,
-          }
-
-    return (
-      <StoreProvider {...storeProviderProps}>
-        {({ store }) => (
-          <PersistStoreProviderContent
-            builder={props.builder}
-            store={store as InternalPersistedStore<TState, TPlugins>}
-            persist={props.persist}
-            flushOnUnmount={props.flushOnUnmount}
-            flushOnPageHide={props.flushOnPageHide}
-            flushOnBackground={props.flushOnBackground}
-          >
-            {props.children}
-          </PersistStoreProviderContent>
-        )}
-      </StoreProvider>
+    const content = ({ store }: { store: PersistedStore<TState, TPlugins> }) => (
+      <PersistStoreProviderContent
+        builder={props.builder}
+        store={store as InternalPersistedStore<TState, TPlugins>}
+        persist={props.persist}
+        flushOnUnmount={props.flushOnUnmount}
+        flushOnPageHide={props.flushOnPageHide}
+        flushOnBackground={props.flushOnBackground}
+      >
+        {props.children}
+      </PersistStoreProviderContent>
     )
+
+    if ('initialState' in props) {
+      const initialState = props.initialState as TState
+
+      return (
+        <StoreProvider builder={props.builder} initialState={initialState}>
+          {content}
+        </StoreProvider>
+      )
+    }
+
+    if (props.loadInitialState) {
+      return (
+        <StoreProvider
+          builder={props.builder}
+          loadInitialState={props.loadInitialState}
+        >
+          {content}
+        </StoreProvider>
+      )
+    }
+
+    return <StoreProvider builder={props.builder}>{content}</StoreProvider>
   }
 
   const builder = getStoreBuilder(props.store)

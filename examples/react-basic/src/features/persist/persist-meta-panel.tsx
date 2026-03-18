@@ -86,7 +86,7 @@ function ResetButton() {
 
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
-    await store.initialize(DEMO_INITIAL_STATE)
+    store.setState(() => DEMO_INITIAL_STATE)
     store.persist.meta.setState(() => resetPersistMeta)
   }
 

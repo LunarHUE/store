@@ -60,7 +60,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
     expect(screen.getByText('0')).toBeTruthy()
   })
 
-  it('initializes through the provider when the builder has no default state', async () => {
+  it('loads initial state through the provider when the builder has no default state', async () => {
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist: async () => {},
@@ -75,11 +75,12 @@ describe('PersistStoreProvider — initialState wiring', () => {
     render(
       <PersistStoreProvider
         builder={builder}
-        initialize={async ({ store }) => {
-          await store.initialize({ count: 42 })
+        loadInitialState={async ({ store }) => {
+          expect(store.lifecycle.meta.get().status).toBe('initializing')
+          return { count: 42 }
         }}
         persist={{
-          key: 'test-provider-initialize',
+          key: 'test-provider-load-initial-state',
         }}
       >
         <Probe />
@@ -119,27 +120,27 @@ describe('PersistStoreProvider — SSR', () => {
     ).not.toThrow()
   })
 
-  it('does not run initialize during server render when initialState is omitted', () => {
+  it('does not run loadInitialState during server render when initialState is omitted', () => {
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist: async () => {},
       }),
     )
-    const initialize = vi.fn(async () => {})
+    const loadInitialState = vi.fn(async () => ({ count: 1 }))
 
     renderToString(
       <PersistStoreProvider
         builder={builder}
-        initialize={initialize}
+        loadInitialState={loadInitialState}
         persist={{
-          key: 'test-ssr-initialize',
+          key: 'test-ssr-load-initial-state',
         }}
       >
         <div>probe</div>
       </PersistStoreProvider>,
     )
 
-    expect(initialize).not.toHaveBeenCalled()
+    expect(loadInitialState).not.toHaveBeenCalled()
   })
 
   it('renders initialState into the server HTML string', () => {

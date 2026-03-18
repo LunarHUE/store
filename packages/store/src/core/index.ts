@@ -5,6 +5,7 @@ export type {
   StorePlugin,
   StorePluginContext,
   StoreBuilder,
+  StoreInitialStateLoader,
   StoreLifecycleMeta,
   StoreLifecycleStatus,
   Store,
