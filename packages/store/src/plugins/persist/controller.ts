@@ -37,7 +37,10 @@ export function createPersistController<TState>(
   store: Store<TState>,
   pluginOptions?: PersistPluginOptions<TState>,
 ): PersistController<TState> {
-  const meta = createStoreInstance(getInitialMeta(pluginOptions)).store
+  const meta = createStoreInstance({
+    initialState: getInitialMeta(pluginOptions),
+    readyOnCreate: true,
+  }).store
   const fallbackKey = `persist:${++nextGeneratedPersistKeyId}`
   let runtimeOptions: RuntimeOptions<TState> | null = null
   let subscription: { unsubscribe(): void } | null = null

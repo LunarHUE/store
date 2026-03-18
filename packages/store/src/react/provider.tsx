@@ -12,6 +12,7 @@ type StoreProviderChildren<TState, TPlugins> =
 type BuilderProviderProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins>
   children?: StoreProviderChildren<TState, TPlugins>
+  hasInitialState?: boolean
   initialState?: TState
   store?: never
 }
@@ -33,6 +34,7 @@ export function StoreProvider<TState, TPlugins>(
     return (
       <BuilderOwnedStoreProvider
         builder={props.builder}
+        hasInitialState={'initialState' in props}
         initialState={props.initialState}
       >
         {props.children}
@@ -53,6 +55,7 @@ declare const __DEV__: boolean
 function BuilderOwnedStoreProvider<TState, TPlugins>({
   builder,
   children,
+  hasInitialState,
   initialState,
 }: BuilderProviderProps<TState, TPlugins>) {
   const context = getStoreContext(builder)
@@ -74,7 +77,9 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   }
 
   if (!storeRef.current) {
-    storeRef.current = builder.create(initialState)
+    storeRef.current = hasInitialState
+      ? builder.create(initialState)
+      : builder.create()
   }
 
   useEffect(() => {

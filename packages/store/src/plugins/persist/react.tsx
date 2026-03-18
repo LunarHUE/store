@@ -228,8 +228,18 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
   props: PersistStoreProviderProps<TState, TPlugins>,
 ) {
   if (props.builder !== undefined) {
+    const storeProviderProps =
+      'initialState' in props
+        ? {
+            builder: props.builder,
+            initialState: props.initialState,
+          }
+        : {
+            builder: props.builder,
+          }
+
     return (
-      <StoreProvider builder={props.builder} initialState={props.initialState}>
+      <StoreProvider {...storeProviderProps}>
         {({ store }) => (
           <PersistStoreProviderContent
             builder={props.builder}
