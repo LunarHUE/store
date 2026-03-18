@@ -10,7 +10,7 @@
       "dependsOn": ["typecheck", "test"]
     },
     "dev": {
-      "dependsOn": ["@lunarhue/ui#build"],
+      "dependsOn": ["@lunarhue/store#build"],
       "cache": false,
       "persistent": true
     },
