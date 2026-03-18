@@ -25,15 +25,15 @@ export type PersistRuntimeOptions<TState> = {
 export type PersistPluginOptions<TState> = {
   flushOnDispose?: boolean
   serializeState?: (state: TState) => TState
-} & Omit<PersistRuntimeOptions<TState>, 'key'>
+} & Omit<PersistRuntimeOptions<TState>, 'key' | 'enabled'>
 
-export type PersistRuntimeSurface<TState> = {
+export type PersistRuntimeSurface = {
   flush(): Promise<void>
   meta: Store<PersistMeta>
 }
 
-export type PersistStoreSurface<TState> = {
-  persist: PersistRuntimeSurface<TState>
+export type PersistStoreSurface = {
+  persist: PersistRuntimeSurface
 }
 
 export type PersistController<TState> = {
@@ -45,15 +45,15 @@ export type PersistController<TState> = {
   flush(): Promise<void>
 }
 
-export type InternalPersistStoreSurface<TState> = PersistStoreSurface<TState> & {
-  persist: PersistRuntimeSurface<TState> & {
+export type InternalPersistStoreSurface<TState> = PersistStoreSurface & {
+  persist: PersistRuntimeSurface & {
     [persistControllerKey]: PersistController<TState>
   }
 }
 
 export type PersistedStore<TState, TPlugins = {}> = Store<
   TState,
-  TPlugins & PersistStoreSurface<TState>
+  TPlugins & PersistStoreSurface
 >
 
 export type InternalPersistedStore<TState, TPlugins = {}> = Store<
@@ -64,5 +64,5 @@ export type InternalPersistedStore<TState, TPlugins = {}> = Store<
 export type PersistPlugin<TState> = StorePlugin<
   TState,
   any,
-  PersistStoreSurface<TState>
+  PersistStoreSurface
 >

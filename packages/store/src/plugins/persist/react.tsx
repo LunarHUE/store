@@ -39,7 +39,7 @@ type PersistStoreProviderChildren<TState, TPlugins> =
   | ((args: PersistentStoreResult<TState, TPlugins>) => ReactNode)
 
 type BuilderPersistStoreProviderBaseProps<TState, TPlugins> = {
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface<TState>>
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
   children?: PersistStoreProviderChildren<TState, TPlugins>
   flushOnBackground?: boolean
   flushOnPageHide?: boolean
@@ -59,7 +59,7 @@ type BuilderPersistStoreProviderWithLoadInitialStateProps<TState, TPlugins> =
     initialState?: never
     loadInitialState: StoreInitialStateLoader<
       TState,
-      TPlugins & PersistStoreSurface<TState>
+      TPlugins & PersistStoreSurface
     >
   }
 
@@ -97,7 +97,7 @@ type PersistenceBoundaryOptions = {
 }
 
 function getPersistStoreContext<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface<TState>>,
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
 ): PersistStoreContext<TState, TPlugins> {
   let context = persistContextMap.get(builder)
 
@@ -141,7 +141,7 @@ function usePersistentRuntime<TState, TPlugins = {}>(
 }
 
 export function usePersistentStore<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface<TState>>,
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
 ): PersistentStoreResult<TState, TPlugins> {
   const contextValue = useContext(
     getPersistStoreContext<TState, TPlugins>(builder),
@@ -200,7 +200,7 @@ function usePersistenceBoundary<TState>(
 }
 
 interface PersistStoreProviderContentProps<TState, TPlugins> {
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface<TState>>
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
   children?: PersistStoreProviderChildren<TState, TPlugins>
   flushOnBackground?: boolean
   flushOnPageHide?: boolean
@@ -240,7 +240,11 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
   props: PersistStoreProviderProps<TState, TPlugins>,
 ) {
   if (props.builder !== undefined) {
-    const content = ({ store }: { store: PersistedStore<TState, TPlugins> }) => (
+    const content = ({
+      store,
+    }: {
+      store: PersistedStore<TState, TPlugins>
+    }) => (
       <PersistStoreProviderContent
         builder={props.builder}
         store={store as InternalPersistedStore<TState, TPlugins>}
@@ -290,10 +294,7 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
       {({ store }) => (
         <PersistStoreProviderContent
           builder={
-            builder as StoreBuilder<
-              TState,
-              TPlugins & PersistStoreSurface<TState>
-            >
+            builder as StoreBuilder<TState, TPlugins & PersistStoreSurface>
           }
           store={store as InternalPersistedStore<TState, TPlugins>}
           persist={props.persist}
