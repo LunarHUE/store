@@ -43,6 +43,9 @@ export function StoreProvider<TState, TPlugins>(
   )
 }
 
+// Native and Expo declare this globally in development mode.
+declare const __DEV__: boolean
+
 function BuilderOwnedStoreProvider<TState, TPlugins>({
   builder,
   children,
@@ -54,7 +57,15 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   if (!builderRef.current) {
     builderRef.current = builder
   } else if (builderRef.current !== builder) {
-    throw new Error('StoreProvider builder prop must remain stable.')
+    const isDev =
+      process.env.NODE_ENV !== 'production' ||
+      (typeof __DEV__ !== 'undefined' && __DEV__)
+
+    if (isDev) {
+      console.warn('StoreProvider builder prop must remain stable.')
+    } else {
+      throw new Error('StoreProvider builder prop must remain stable.')
+    }
   }
 
   if (!storeRef.current) {
