@@ -69,7 +69,7 @@ Provider usage:
 </StoreProvider>
 
 <StoreProvider builder={SubmissionStore}>
-  {({ store }) => <PersistenceBoundary store={store} flushOnUnmount />}
+  {({ store }) => <></>}
 </StoreProvider>
 ```
 
@@ -151,7 +151,7 @@ const SubmissionStore = createStore({}).extend(
 ```
 
 Persist callbacks and debounce settings may be declared on `persist(...)` as
-defaults. Runtime config passed to `PersistStoreProvider` overrides those  
+defaults. Runtime config passed to `PersistStoreProvider` overrides those
 defaults when present.
 
 React runtime wiring:
@@ -194,7 +194,3 @@ Boundary:
 
 - `store`
 - `flush()`
-
-`PersistenceBoundary` is still exported as a compatibility escape hatch when
-only a nested sub-tree should own flush behavior, but `PersistStoreProvider` is
-the primary lifecycle API.

@@ -99,7 +99,8 @@ function ExternalStoreProvider<TState, TPlugins>({
   }
 
   const context = getStoreContext(builder)
-  const content = typeof children === 'function' ? children({ store }) : children
+  const content =
+    typeof children === 'function' ? children({ store }) : children
 
   return <context.Provider value={store}>{content}</context.Provider>
 }

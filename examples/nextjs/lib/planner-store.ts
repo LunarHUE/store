@@ -8,7 +8,7 @@ export const DEMO_STORAGE_KEY = 'lunarhue.store.nextjs.example'
 
 type SelectionState = Record<string, number>
 
-type PlannerState = {
+export type PlannerState = {
   activeCategory: ProductCategory | 'all'
   guestCount: number
   notes: string

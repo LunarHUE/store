@@ -9,13 +9,12 @@ import {
 
 import type { StoreBuilder } from '../../core'
 import { getStoreBuilder } from '../../core/builder-registry'
-import { StoreProvider, useSelector } from '../../react'
+import { StoreProvider } from '../../react'
 
 import {
   persistControllerKey,
   type InternalPersistedStore,
   type PersistHydrateArgs,
-  type PersistMeta,
   type PersistPersistArgs,
   type PersistStoreSurface,
   type PersistRuntimeOptions,
@@ -64,18 +63,6 @@ type ExternalPersistStoreProviderProps<TState, TPlugins> = {
 export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | BuilderPersistStoreProviderProps<TState, TPlugins>
   | ExternalPersistStoreProviderProps<TState, TPlugins>
-
-/**
- * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
- * as a compatibility escape hatch for sub-tree flush behavior.
- */
-export type PersistenceBoundaryProps<TState> = {
-  store: PersistedStore<TState>
-  flushOnUnmount?: boolean
-  flushOnPageHide?: boolean
-  flushOnBackground?: boolean
-  children?: ReactNode
-}
 
 type PersistenceBoundaryOptions = {
   flushOnBackground?: boolean
@@ -288,24 +275,4 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
       )}
     </StoreProvider>
   )
-}
-
-/**
- * @deprecated Prefer PersistStoreProvider flush options. This boundary remains
- * as a compatibility escape hatch for sub-tree flush behavior.
- */
-export function PersistenceBoundary<TState>({
-  children,
-  flushOnBackground,
-  flushOnPageHide,
-  flushOnUnmount,
-  store,
-}: PersistenceBoundaryProps<TState>) {
-  usePersistenceBoundary(store, {
-    flushOnBackground,
-    flushOnPageHide,
-    flushOnUnmount,
-  })
-
-  return <>{children}</>
 }
