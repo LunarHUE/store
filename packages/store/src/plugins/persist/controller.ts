@@ -9,7 +9,6 @@ import type { Store } from '../../core'
 import { createStoreInstance } from '../../core/store-instance'
 
 const DEFAULT_META: PersistMeta = {
-  isHydrated: false,
   pending: false,
   persisting: false,
   lastPersistedAt: null,
@@ -18,19 +17,8 @@ const DEFAULT_META: PersistMeta = {
 
 let nextGeneratedPersistKeyId = 0
 
-function getInitialMeta<TState>(
-  options?: PersistPluginOptions<TState>,
-): PersistMeta {
-  return {
-    ...DEFAULT_META,
-    isHydrated: options?.hydratedOnCreate ?? false,
-  }
-}
-
-type RuntimeOptions<TState> = Required<
-  Omit<PersistRuntimeOptions<TState>, 'hydrate'>
-> & {
-  hydrate?: PersistRuntimeOptions<TState>['hydrate']
+type RuntimeOptions<TState> = Required<PersistRuntimeOptions<TState>> & {
+  key: string
 }
 
 export function createPersistController<TState>(
@@ -38,7 +26,7 @@ export function createPersistController<TState>(
   pluginOptions?: PersistPluginOptions<TState>,
 ): PersistController<TState> {
   const meta = createStoreInstance({
-    initialState: getInitialMeta(pluginOptions),
+    initialState: { ...DEFAULT_META },
     readyOnCreate: true,
   }).store
   const fallbackKey = `persist:${++nextGeneratedPersistKeyId}`
@@ -49,12 +37,11 @@ export function createPersistController<TState>(
     previousState: TState
     nextState: TState
   } | null = null
-  let lastObservedState = store.get()
+  let lastObservedState: TState | undefined =
+    store.lifecycle.meta.get().status === 'ready' ? store.get() : undefined
   let currentKey: string | null = null
   let currentFlushPromise: Promise<void> | null = null
-  let hydrating = false
   let isConnected = false
-  let hasRequestedHydrationForKey = false
 
   const resolveKey = (key?: string) => key ?? fallbackKey
 
@@ -86,7 +73,6 @@ export function createPersistController<TState>(
       key: resolveKey(options.key),
       enabled: options.enabled ?? pluginOptions?.enabled ?? true,
       delay: options.delay ?? pluginOptions?.delay ?? 0,
-      hydrate: options.hydrate ?? pluginOptions?.hydrate,
       onPersist,
     }
   }
@@ -95,9 +81,11 @@ export function createPersistController<TState>(
     currentKey = key
     queuedTransition = null
     clearTimer()
-    hasRequestedHydrationForKey = false
-    lastObservedState = store.get()
-    meta.setState(() => getInitialMeta(pluginOptions))
+    lastObservedState =
+      store.lifecycle.meta.get().status === 'ready' ? store.get() : undefined
+    meta.setState(() => ({
+      ...DEFAULT_META,
+    }))
   }
 
   const ensureSubscription = () => {
@@ -109,12 +97,11 @@ export function createPersistController<TState>(
       const previousState = lastObservedState
       lastObservedState = nextState
 
-      if (
-        hydrating ||
-        !isConnected ||
-        !runtimeOptions?.enabled ||
-        Object.is(previousState, nextState)
-      ) {
+      if (!isConnected || !runtimeOptions?.enabled) {
+        return
+      }
+
+      if (previousState === undefined || Object.is(previousState, nextState)) {
         return
       }
 
@@ -139,39 +126,6 @@ export function createPersistController<TState>(
         void flush()
       }, runtimeOptions.delay)
     })
-  }
-
-  const maybeHydrate = async (
-    runtimeStore: PersistedStore<TState>,
-    options: RuntimeOptions<TState>,
-  ) => {
-    if (!options.enabled || hasRequestedHydrationForKey) {
-      return
-    }
-
-    hasRequestedHydrationForKey = true
-
-    if (!options.hydrate) {
-      updateMeta((prev) => ({
-        ...prev,
-        isHydrated: true,
-        error: null,
-      }))
-      return
-    }
-
-    try {
-      await options.hydrate({
-        key: options.key,
-        store: runtimeStore,
-      })
-    } catch (error) {
-      updateMeta((prev) => ({
-        ...prev,
-        error,
-      }))
-      throw error
-    }
   }
 
   const flush = (): Promise<void> => {
@@ -246,7 +200,6 @@ export function createPersistController<TState>(
 
       isConnected = true
       ensureSubscription()
-      void maybeHydrate(runtimeStore, resolvedOptions).catch(() => {})
 
       return () => {
         if (currentKey !== resolvedOptions.key) {
@@ -263,24 +216,6 @@ export function createPersistController<TState>(
     },
     flush() {
       return flush()
-    },
-    async hydrate(nextState) {
-      clearTimer()
-      queuedTransition = null
-      hydrating = true
-
-      try {
-        store.setState(() => nextState)
-        lastObservedState = nextState
-        updateMeta((prev) => ({
-          ...prev,
-          isHydrated: true,
-          pending: false,
-          error: null,
-        }))
-      } finally {
-        hydrating = false
-      }
     },
   }
 }

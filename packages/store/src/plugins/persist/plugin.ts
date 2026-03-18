@@ -16,15 +16,9 @@ export function persist<TState>(
     }
 
     return {
-      hydrate(nextState: TState) {
-        return controller.hydrate(nextState)
-      },
       persist: {
         flush() {
           return controller.flush()
-        },
-        hydrate(nextState: TState) {
-          return controller.hydrate(nextState)
         },
         meta: controller.meta,
         [persistControllerKey]: controller,

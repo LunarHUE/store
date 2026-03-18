@@ -14,7 +14,6 @@ import { StoreProvider } from '../../react'
 import {
   persistControllerKey,
   type InternalPersistedStore,
-  type PersistHydrateArgs,
   type PersistPersistArgs,
   type PersistStoreSurface,
   type PersistRuntimeOptions,
@@ -45,6 +44,9 @@ type BuilderPersistStoreProviderProps<TState, TPlugins> = {
   flushOnBackground?: boolean
   flushOnPageHide?: boolean
   flushOnUnmount?: boolean
+  initialize?: (args: {
+    store: PersistedStore<TState, TPlugins>
+  }) => Promise<void>
   initialState?: TState
   persist?: PersistRuntimeOptions<TState>
   store?: never
@@ -96,13 +98,6 @@ function usePersistentRuntime<TState, TPlugins = {}>(
 
     await options.onPersist(args)
   })
-  const hydrate = useEffectEvent(async (args: PersistHydrateArgs<TState>) => {
-    if (!options.hydrate) {
-      return
-    }
-
-    await options.hydrate(args)
-  })
 
   useEffect(() => {
     return store.persist[persistControllerKey].connect(store, {
@@ -110,15 +105,8 @@ function usePersistentRuntime<TState, TPlugins = {}>(
       enabled: options.enabled,
       delay: options.delay,
       onPersist: options.onPersist ? (args) => onPersist(args) : undefined,
-      hydrate: options.hydrate ? (args) => hydrate(args) : undefined,
     })
-  }, [
-    options.delay,
-    options.enabled,
-    options.key,
-    store,
-    Boolean(options.hydrate),
-  ])
+  }, [options.delay, options.enabled, options.key, store])
 
   return {
     store,
@@ -232,10 +220,12 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
       'initialState' in props
         ? {
             builder: props.builder,
+            initialize: props.initialize,
             initialState: props.initialState,
           }
         : {
             builder: props.builder,
+            initialize: props.initialize,
           }
 
     return (

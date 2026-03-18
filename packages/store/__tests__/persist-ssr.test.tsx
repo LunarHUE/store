@@ -59,6 +59,35 @@ describe('PersistStoreProvider — initialState wiring', () => {
 
     expect(screen.getByText('0')).toBeTruthy()
   })
+
+  it('initializes through the provider when the builder has no default state', async () => {
+    const builder = createStore<{ count: number }>().extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+
+    function Probe() {
+      const count = useStoreSelector(builder, (state) => state.count)
+      return <div>{count}</div>
+    }
+
+    render(
+      <PersistStoreProvider
+        builder={builder}
+        initialize={async ({ store }) => {
+          await store.initialize({ count: 42 })
+        }}
+        persist={{
+          key: 'test-provider-initialize',
+        }}
+      >
+        <Probe />
+      </PersistStoreProvider>,
+    )
+
+    expect(await screen.findByText('42')).toBeTruthy()
+  })
 })
 
 describe('PersistStoreProvider — SSR', () => {
@@ -88,6 +117,29 @@ describe('PersistStoreProvider — SSR', () => {
         </PersistStoreProvider>,
       ),
     ).not.toThrow()
+  })
+
+  it('does not run initialize during server render when initialState is omitted', () => {
+    const builder = createStore<{ count: number }>().extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+    const initialize = vi.fn(async () => {})
+
+    renderToString(
+      <PersistStoreProvider
+        builder={builder}
+        initialize={initialize}
+        persist={{
+          key: 'test-ssr-initialize',
+        }}
+      >
+        <div>probe</div>
+      </PersistStoreProvider>,
+    )
+
+    expect(initialize).not.toHaveBeenCalled()
   })
 
   it('renders initialState into the server HTML string', () => {

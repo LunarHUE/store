@@ -1,7 +1,6 @@
 export { persist } from './plugin'
 export { PersistStoreProvider, usePersistentStore } from './react'
 export type {
-  PersistHydrateArgs,
   PersistMeta,
   PersistPersistArgs,
   PersistPluginOptions,
