@@ -1,9 +1,5 @@
 export { persist } from './plugin'
-export {
-  PersistStoreProvider,
-  PersistenceBoundary,
-  usePersistentStore,
-} from './react'
+export { PersistStoreProvider, usePersistentStore } from './react'
 export type {
   PersistHydrateArgs,
   PersistMeta,
@@ -12,8 +8,4 @@ export type {
   PersistRuntimeOptions,
   PersistedStore,
 } from './types'
-export type {
-  PersistStoreProviderProps,
-  PersistenceBoundaryProps,
-  PersistentStoreResult,
-} from './react'
+export type { PersistStoreProviderProps, PersistentStoreResult } from './react'

@@ -12,6 +12,7 @@ type StoreProviderChildren<TState, TPlugins> =
 type BuilderProviderProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins>
   children?: StoreProviderChildren<TState, TPlugins>
+  initialState?: TState
   store?: never
 }
 
@@ -30,7 +31,10 @@ export function StoreProvider<TState, TPlugins>(
 ) {
   if (props.builder !== undefined) {
     return (
-      <BuilderOwnedStoreProvider builder={props.builder}>
+      <BuilderOwnedStoreProvider
+        builder={props.builder}
+        initialState={props.initialState}
+      >
         {props.children}
       </BuilderOwnedStoreProvider>
     )
@@ -46,6 +50,7 @@ export function StoreProvider<TState, TPlugins>(
 function BuilderOwnedStoreProvider<TState, TPlugins>({
   builder,
   children,
+  initialState,
 }: BuilderProviderProps<TState, TPlugins>) {
   const context = getStoreContext(builder)
   const builderRef = useRef<StoreBuilder<TState, TPlugins> | null>(null)
@@ -58,7 +63,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   }
 
   if (!storeRef.current) {
-    storeRef.current = builder.create()
+    storeRef.current = builder.create(initialState)
   }
 
   useEffect(() => {
@@ -94,7 +99,8 @@ function ExternalStoreProvider<TState, TPlugins>({
   }
 
   const context = getStoreContext(builder)
-  const content = typeof children === 'function' ? children({ store }) : children
+  const content =
+    typeof children === 'function' ? children({ store }) : children
 
   return <context.Provider value={store}>{content}</context.Provider>
 }

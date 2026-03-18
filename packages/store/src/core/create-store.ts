@@ -13,8 +13,8 @@ export function createStore<TState>(
     plugins: PluginList,
   ): StoreBuilder<TState, TPlugins> => {
     const builder: StoreBuilder<TState, TPlugins> = {
-      create() {
-        const controller = createStoreInstance(initialState)
+      create(overrideInitialState?: TState) {
+        const controller = createStoreInstance(overrideInitialState ?? initialState)
 
         for (const plugin of plugins) {
           const surface = plugin({

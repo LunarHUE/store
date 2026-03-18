@@ -23,22 +23,14 @@ import {
   type CatalogItem,
   type ProductCategory,
 } from '@/lib/catalog'
-import {
-  PlannerStore,
-  selectActiveCategory,
-  selectCanRemoveItem,
-  selectCategoryIsActive,
-  selectHasFilters,
-  selectQuantityFor,
-  selectSearch,
-} from '@/lib/planner-store'
+import { PlannerStore } from '@/lib/planner-store'
 
 import { usePlannerActions } from './hooks'
 import { PanelHeader } from './panel-header'
 
 export function CatalogPanel() {
   return (
-    <Card className="shadow-none">
+    <Card className="flex min-h-0 flex-1 flex-col shadow-none">
       <CardHeader className="gap-4">
         <PanelHeader
           eyebrow="Catalog"
@@ -51,7 +43,7 @@ export function CatalogPanel() {
           <Badge variant="secondary">client leaves</Badge>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent className="flex min-h-0 flex-1 flex-col gap-4">
         <div className="grid gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
           <SearchField />
           <div className="flex flex-wrap gap-2">
@@ -66,7 +58,9 @@ export function CatalogPanel() {
           </div>
         </div>
         <Separator />
-        <CatalogList />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <CatalogList />
+        </div>
       </CardContent>
     </Card>
   )
@@ -74,7 +68,7 @@ export function CatalogPanel() {
 
 function SearchField() {
   const actions = usePlannerActions()
-  const search = useStoreSelector(PlannerStore, selectSearch)
+  const search = useStoreSelector(PlannerStore, (state) => state.search)
 
   return (
     <label className="relative flex items-center">
@@ -103,7 +97,7 @@ function CategoryButton({
   const actions = usePlannerActions()
   const isActive = useStoreSelector(
     PlannerStore,
-    selectCategoryIsActive(category),
+    (state) => state.activeCategory === category,
   )
 
   return (
@@ -122,7 +116,10 @@ function CategoryButton({
 
 function ResetFiltersButton() {
   const actions = usePlannerActions()
-  const hasFilters = useStoreSelector(PlannerStore, selectHasFilters)
+  const hasFilters = useStoreSelector(
+    PlannerStore,
+    (state) => state.search.trim().length > 0 || state.activeCategory !== 'all',
+  )
 
   return (
     <Button
@@ -140,8 +137,11 @@ function ResetFiltersButton() {
 }
 
 function CatalogList() {
-  const activeCategory = useStoreSelector(PlannerStore, selectActiveCategory)
-  const search = useStoreSelector(PlannerStore, selectSearch)
+  const activeCategory = useStoreSelector(
+    PlannerStore,
+    (state) => state.activeCategory,
+  )
+  const search = useStoreSelector(PlannerStore, (state) => state.search)
   const deferredSearch = useDeferredValue(search)
   const normalizedSearch = deferredSearch.trim().toLowerCase()
 
@@ -216,7 +216,10 @@ function ProductCard({ item }: { item: CatalogItem }) {
 }
 
 function QuantityBadge({ productId }: { productId: string }) {
-  const quantity = useStoreSelector(PlannerStore, selectQuantityFor(productId))
+  const quantity = useStoreSelector(
+    PlannerStore,
+    (state) => state.selections[productId] ?? 0,
+  )
 
   return (
     <Badge variant={quantity > 0 ? 'default' : 'outline'}>{quantity}</Badge>
@@ -243,7 +246,7 @@ function RemoveItemButton({ productId }: { productId: string }) {
   const actions = usePlannerActions()
   const canRemove = useStoreSelector(
     PlannerStore,
-    selectCanRemoveItem(productId),
+    (state) => state.selections[productId] ?? 0 > 0,
   )
 
   return (

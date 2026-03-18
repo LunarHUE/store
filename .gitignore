@@ -5,3 +5,4 @@ dist
 coverage
 .tsd
 *.tsbuildinfo
+docs/superpowers

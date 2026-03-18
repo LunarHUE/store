@@ -21,7 +21,7 @@ export type StorePlugin<TState, TPlugins, TNextPlugins> = (
 ) => TNextPlugins
 
 export type StoreBuilder<TState, TPlugins = {}> = {
-  create(): Store<TState, TPlugins>
+  create(initialState?: TState): Store<TState, TPlugins>
   extend<TNextPlugins>(
     plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>

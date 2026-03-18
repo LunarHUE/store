@@ -2,29 +2,42 @@
 
 import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
 
-import { DEMO_STORAGE_KEY, PlannerStore } from '@/lib/planner-store'
+import { PlannerStore, type PlannerState } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
 import { NotesPanel } from './notes-panel'
 import { PersistencePanel } from './persistence-panel'
 import { SummaryPanel } from './summary-panel'
 
-export function PlannerDemo() {
+// Server Component usage:
+//   const data = await fetchPlannerData()  // fetch from DB, cache, etc.
+//   return <PlannerDemo initialState={data} />
+//
+// `initialState` seeds the store before the first render.
+// The persist plugin's `hydrate` callback (if configured) will run
+// after mount and can override this value if needed.
+
+type PlannerDemoProps = {
+  initialState?: PlannerState
+}
+
+export function PlannerDemo({ initialState }: PlannerDemoProps) {
   return (
     <PersistStoreProvider
       builder={PlannerStore}
-      persist={{ key: DEMO_STORAGE_KEY }}
+      initialState={initialState}
       flushOnPageHide
       flushOnUnmount
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <CatalogPanel />
-        <div className="space-y-4">
-          <SummaryPanel />
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <CatalogPanel />
+          <NotesPanel />
         </div>
-
-        <NotesPanel />
-        <PersistencePanel />
+        <div className="flex w-full shrink-0 flex-col gap-4 overflow-hidden lg:w-80">
+          <SummaryPanel />
+          <PersistencePanel />
+        </div>
       </div>
     </PersistStoreProvider>
   )

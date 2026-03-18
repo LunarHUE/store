@@ -1,6 +1,6 @@
 # `@lunarhue/store`
 
-[![npm version](https://img.shields.io/npm/v/@lunarhue/store)](https://www.npmjs.com/package/@lunarhue/store)
+[npm version](https://www.npmjs.com/package/@lunarhue/store)
 
 Framework-agnostic state built on top of `@tanstack/store`, with
 plugin composition, selector-first React bindings, and plugin-owned React APIs.
@@ -10,7 +10,7 @@ This repo is a Bun workspace. The publishable package lives in
 
 ## Install
 
-Package: <https://www.npmjs.com/package/@lunarhue/store>
+Package: [https://www.npmjs.com/package/@lunarhue/store](https://www.npmjs.com/package/@lunarhue/store)
 
 ```sh
 npm install @lunarhue/store
@@ -102,7 +102,7 @@ the scoped store instance at the provider boundary:
 function App() {
   return (
     <StoreProvider builder={CounterStore}>
-      {({ store }) => <PersistenceBoundary store={store} flushOnUnmount />}
+      {({ store }) => <></>}
     </StoreProvider>
   )
 }
@@ -196,7 +196,6 @@ The persist plugin adds:
 - `store.persist.meta`
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
-- `PersistenceBoundary` as a compatibility escape hatch
 
 Store declaration:
 
@@ -234,13 +233,11 @@ function DraftScreen() {
   const persistMeta = useSelector(store.persist.meta, (meta) => meta)
 
   return (
-    <PersistenceBoundary store={store} flushOnUnmount flushOnPageHide>
       <div>
         <span>Hydrated: {String(persistMeta.isHydrated)}</span>
         <span>Pending: {String(persistMeta.pending)}</span>
         <button onClick={() => void flush()}>Flush</button>
       </div>
-    </PersistenceBoundary>
   )
 }
 
@@ -275,9 +272,6 @@ On web:
 
 - `flushOnPageHide` is implemented
 - `flushOnBackground` is accepted but currently a no-op
-
-`PersistenceBoundary` still exists for compatibility when only a sub-tree should
-own flush behavior, but the provider is the default lifecycle API now.
 
 ## How plugins work
 
