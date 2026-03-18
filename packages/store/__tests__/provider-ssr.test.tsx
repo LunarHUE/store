@@ -1,6 +1,7 @@
-import { cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it } from 'vitest'
+import { act, cleanup, render, screen } from '@testing-library/react'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { renderToString } from 'react-dom/server'
+import { hydrateRoot } from 'react-dom/client'
 
 import { createStore } from '../src/core'
 import { StoreProvider, useStore } from '../src/react'
@@ -70,6 +71,10 @@ describe('StoreProvider — initialState wiring', () => {
 })
 
 describe('StoreProvider — SSR', () => {
+  afterEach(() => {
+    cleanup()
+  })
+
   it('renders initialState into the server HTML string', () => {
     const builder = createStore({ count: 0 })
 
@@ -85,5 +90,40 @@ describe('StoreProvider — SSR', () => {
     )
 
     expect(html).toContain('42')
+  })
+
+  it('hydrates without a mismatch when initialState matches server render', async () => {
+    const builder = createStore({ count: 0 })
+
+    function Probe() {
+      const store = useStore(builder)
+      return <div>{store.get().count}</div>
+    }
+
+    const html = renderToString(
+      <StoreProvider builder={builder} initialState={{ count: 42 }}>
+        <Probe />
+      </StoreProvider>,
+    )
+
+    const container = document.createElement('div')
+    container.innerHTML = html
+
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    await act(async () => {
+      hydrateRoot(
+        container,
+        <StoreProvider builder={builder} initialState={{ count: 42 }}>
+          <Probe />
+        </StoreProvider>,
+      )
+    })
+
+    expect(container.textContent).toContain('42')
+    // React logs hydration mismatches via console.error
+    expect(errorSpy).not.toHaveBeenCalled()
+
+    errorSpy.mockRestore()
   })
 })
