@@ -10,13 +10,11 @@ export type PersistMeta = {
 }
 
 export type PersistPersistArgs<TState> = {
-  key: string
   previousState: TState
   nextState: TState
 }
 
 export type PersistRuntimeOptions<TState> = {
-  key?: string
   enabled?: boolean
   delay?: number
   onPersist?: (args: PersistPersistArgs<TState>) => Promise<void>
@@ -25,7 +23,7 @@ export type PersistRuntimeOptions<TState> = {
 export type PersistPluginOptions<TState> = {
   flushOnDispose?: boolean
   serializeState?: (state: TState) => TState
-} & Omit<PersistRuntimeOptions<TState>, 'key' | 'enabled'>
+} & Omit<PersistRuntimeOptions<TState>, 'enabled'>
 
 export type PersistRuntimeSurface = {
   flush(): Promise<void>

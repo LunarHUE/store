@@ -145,15 +145,16 @@ const plannerActions = {
 }
 
 export const PlannerStore = createStore<PlannerState>()
-  .extend(actions(() => plannerActions))
+  .extend(
+    actions(() => ({
+      ...plannerActions,
+    })),
+  )
   .extend(
     persist({
-      delay: 10000,
+      delay: 250,
       flushOnDispose: true,
-
       async onPersist({ nextState }) {
-        console.log('onPersist', nextState)
-        await new Promise((resolve) => setTimeout(resolve, 10000))
         setPlannerStateToClientCookies(nextState)
       },
     }),
