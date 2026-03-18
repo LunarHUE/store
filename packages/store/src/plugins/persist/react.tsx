@@ -46,6 +46,7 @@ type BuilderPersistStoreProviderProps<TState, TPlugins> = {
   flushOnBackground?: boolean
   flushOnPageHide?: boolean
   flushOnUnmount?: boolean
+  initialState?: TState
   persist?: PersistRuntimeOptions<TState>
   store?: never
 }
@@ -241,7 +242,7 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
 ) {
   if (props.builder !== undefined) {
     return (
-      <StoreProvider builder={props.builder}>
+      <StoreProvider builder={props.builder} initialState={props.initialState}>
         {({ store }) => (
           <PersistStoreProviderContent
             builder={props.builder}
