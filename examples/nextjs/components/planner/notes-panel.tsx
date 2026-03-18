@@ -6,18 +6,14 @@ import { useStoreSelector } from '@lunarhue/store/react'
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  PlannerStore,
-  selectNotes,
-  selectNotesLength,
-} from '@/lib/planner-store'
+import { PlannerStore } from '@/lib/planner-store'
 
 import { usePlannerActions } from './hooks'
 import { PanelHeader } from './panel-header'
 
 export function NotesPanel() {
   return (
-    <Card className="shadow-none">
+    <Card className="shadow-none h-[250px]">
       <CardHeader>
         <PanelHeader
           eyebrow="Notes"
@@ -27,7 +23,6 @@ export function NotesPanel() {
       </CardHeader>
       <CardContent className="space-y-3">
         <NotesField />
-        <NotesLengthLabel />
       </CardContent>
     </Card>
   )
@@ -35,7 +30,7 @@ export function NotesPanel() {
 
 function NotesField() {
   const actions = usePlannerActions()
-  const notes = useStoreSelector(PlannerStore, selectNotes)
+  const notes = useStoreSelector(PlannerStore, (state) => state.notes)
 
   return (
     <Textarea
@@ -45,21 +40,8 @@ function NotesField() {
           actions.setNotes(event.target.value)
         })
       }}
-      rows={4}
       placeholder="Add timing, setup, or allergy notes."
-      className="max-h-28 h-full resize-none"
+      className="h-28 resize-none"
     />
-  )
-}
-
-function NotesLengthLabel() {
-  const notesLength = useStoreSelector(PlannerStore, selectNotesLength)
-
-  return (
-    <p className="text-xs text-muted-foreground">
-      {notesLength > 0
-        ? `${notesLength} non-space characters`
-        : 'No briefing added'}
-    </p>
   )
 }

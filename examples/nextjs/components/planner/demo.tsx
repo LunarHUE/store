@@ -2,7 +2,7 @@
 
 import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
 
-import { DEMO_STORAGE_KEY, PlannerStore, type PlannerState } from '@/lib/planner-store'
+import { PlannerStore, type PlannerState } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
 import { NotesPanel } from './notes-panel'
@@ -26,18 +26,18 @@ export function PlannerDemo({ initialState }: PlannerDemoProps) {
     <PersistStoreProvider
       builder={PlannerStore}
       initialState={initialState}
-      persist={{ key: DEMO_STORAGE_KEY }}
       flushOnPageHide
       flushOnUnmount
     >
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <CatalogPanel />
-        <div className="space-y-4">
-          <SummaryPanel />
+      <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden lg:flex-row">
+        <div className="flex min-h-0 flex-1 flex-col gap-4 overflow-hidden">
+          <CatalogPanel />
+          <NotesPanel />
         </div>
-
-        <NotesPanel />
-        <PersistencePanel />
+        <div className="flex w-full shrink-0 flex-col gap-4 overflow-hidden lg:w-80">
+          <SummaryPanel />
+          <PersistencePanel />
+        </div>
       </div>
     </PersistStoreProvider>
   )

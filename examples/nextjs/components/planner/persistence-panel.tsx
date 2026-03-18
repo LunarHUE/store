@@ -42,7 +42,11 @@ function HydrationBadge() {
   const { store } = usePlannerPersistentStore()
   const isHydrated = useSelector(store.persist.meta, (meta) => meta.isHydrated)
 
-  return <Badge variant={isHydrated ? 'default' : 'outline'}>{isHydrated ? 'Hydrated' : 'Waiting to hydrate'}</Badge>
+  return (
+    <Badge variant={isHydrated ? 'default' : 'outline'}>
+      {isHydrated ? 'Hydrated' : 'Waiting to hydrate'}
+    </Badge>
+  )
 }
 
 function PendingBadge() {
@@ -52,7 +56,11 @@ function PendingBadge() {
     (meta) => meta.pending || meta.persisting,
   )
 
-  return <Badge variant={isPending ? 'secondary' : 'outline'}>{isPending ? 'Sync pending' : 'Sync idle'}</Badge>
+  return (
+    <Badge variant={isPending ? 'secondary' : 'outline'}>
+      {isPending ? 'Sync pending' : 'Sync idle'}
+    </Badge>
+  )
 }
 
 function LastSavedLabel() {
@@ -73,10 +81,17 @@ function LastSavedLabel() {
 
 function PersistErrorLabel() {
   const { store } = usePlannerPersistentStore()
-  const hasError = useSelector(store.persist.meta, (meta) => meta.error !== null)
+  const hasError = useSelector(
+    store.persist.meta,
+    (meta) => meta.error !== null,
+  )
 
   return (
-    <p className={hasError ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'}>
+    <p
+      className={
+        hasError ? 'text-sm text-destructive' : 'text-sm text-muted-foreground'
+      }
+    >
       {hasError
         ? 'Persistence hit an error. The next write will retry automatically.'
         : 'Local storage is used only for this example.'}
@@ -85,18 +100,23 @@ function PersistErrorLabel() {
 }
 
 function FlushNowButton() {
-  const { flush } = usePlannerPersistentStore()
+  const { flush, store } = usePlannerPersistentStore()
+  const isPersisting = useSelector(
+    store.persist.meta,
+    (meta) => meta.persisting,
+  )
 
   return (
     <Button
       variant="outline"
       size="sm"
+      disabled={isPersisting}
       onClick={() => {
         void flush()
       }}
     >
       <Save className="size-3.5" />
-      Flush
+      Save
     </Button>
   )
 }

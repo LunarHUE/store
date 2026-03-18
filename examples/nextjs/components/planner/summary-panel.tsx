@@ -6,31 +6,17 @@ import { Minus, Plus, RotateCcw } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Separator } from '@/components/ui/separator'
 import { CATALOG_BY_ID, formatCurrency } from '@/lib/catalog'
-import {
-  PlannerStore,
-  compareStringArrays,
-  selectCanClearPlan,
-  selectCanDecreaseGuests,
-  selectCanRemoveItem,
-  selectCoverageNote,
-  selectDistinctSelections,
-  selectEstimatedTotal,
-  selectGuestCount,
-  selectLineTotal,
-  selectQuantityFor,
-  selectSelectedProductIds,
-  selectTotalUnits,
-} from '@/lib/planner-store'
+import { PlannerStore } from '@/lib/planner-store'
 
 import { usePlannerActions } from './hooks'
 import { PanelHeader } from './panel-header'
 import { StatCard } from './stat-card'
+import { INITIAL_STATE } from '@/lib/cookies'
 
 export function SummaryPanel() {
   return (
-    <Card className="shadow-none h-full">
+    <Card className="flex min-h-0 flex-1 flex-col shadow-none">
       <CardHeader className="gap-4">
         <PanelHeader
           eyebrow="Plan"
@@ -39,18 +25,22 @@ export function SummaryPanel() {
           action={<LoadSamplePlanButton />}
         />
       </CardHeader>
-      <CardContent className="space-y-4">
+
+      <CardContent className="flex flex-1 min-h-0 flex-col gap-4">
         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
           <EstimatedTotalStat />
           <TotalUnitsStat />
           <DistinctSelectionsStat />
         </div>
+
         <GuestCountCard />
-        <CoverageNote />
-        <Separator />
-        <SelectionList />
-        <div className="flex justify-end">
-          <ClearPlanButton />
+
+        <div className="flex flex-1 min-h-0 flex-col">
+          <SelectionList />
+
+          <div className="flex justify-end pt-2">
+            <ClearPlanButton />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -58,8 +48,15 @@ export function SummaryPanel() {
 }
 
 function EstimatedTotalStat() {
-  const estimatedTotal = useStoreSelector(PlannerStore, selectEstimatedTotal)
-
+  const selections = useStoreSelector(PlannerStore, (state) => state.selections)
+  const itemById = (id: string) => CATALOG_BY_ID[id]
+  const estimatedTotal = Object.entries(selections).reduce(
+    (total, [id, quantity]) => {
+      const item = itemById(id)
+      return total + (item?.price ?? 0) * quantity
+    },
+    0,
+  )
   return (
     <StatCard
       label="Estimated total"
@@ -70,7 +67,11 @@ function EstimatedTotalStat() {
 }
 
 function TotalUnitsStat() {
-  const totalUnits = useStoreSelector(PlannerStore, selectTotalUnits)
+  const selections = useStoreSelector(PlannerStore, (state) => state.selections)
+  const totalUnits = Object.values(selections).reduce(
+    (total, quantity) => total + quantity,
+    0,
+  )
 
   return (
     <StatCard
@@ -84,7 +85,7 @@ function TotalUnitsStat() {
 function DistinctSelectionsStat() {
   const distinctSelections = useStoreSelector(
     PlannerStore,
-    selectDistinctSelections,
+    (state) => Object.keys(state.selections).length,
   )
 
   return (
@@ -116,7 +117,7 @@ function GuestCountCard() {
 }
 
 function GuestCountValue() {
-  const guestCount = useStoreSelector(PlannerStore, selectGuestCount)
+  const guestCount = useStoreSelector(PlannerStore, (state) => state.guestCount)
 
   return (
     <p className="mt-1 text-2xl font-semibold tracking-[-0.03em] text-foreground">
@@ -127,7 +128,10 @@ function GuestCountValue() {
 
 function DecreaseGuestsButton() {
   const actions = usePlannerActions()
-  const canDecrease = useStoreSelector(PlannerStore, selectCanDecreaseGuests)
+  const canDecrease = useStoreSelector(
+    PlannerStore,
+    (state) => state.guestCount > 1,
+  )
 
   return (
     <Button
@@ -158,26 +162,20 @@ function IncreaseGuestsButton() {
   )
 }
 
-function CoverageNote() {
-  const note = useStoreSelector(PlannerStore, selectCoverageNote)
-
-  return (
-    <div className="rounded-lg border border-border bg-muted/45 px-3 py-2.5 text-sm text-foreground">
-      {note}
-    </div>
-  )
+const isEqualUnordered = (a: string[], b: string[]) => {
+  if (a.length !== b.length) return false
+  return [...a].sort().every((v, i) => v === [...b].sort()[i])
 }
-
 function SelectionList() {
   const selectedProductIds = useStoreSelector(
     PlannerStore,
-    selectSelectedProductIds,
-    compareStringArrays,
+    (state) => Object.keys(state.selections),
+    isEqualUnordered,
   )
 
   if (selectedProductIds.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
+      <div className="flex-1 rounded-lg border border-dashed border-border px-4 py-5 text-sm text-muted-foreground">
         No selections yet. Each row will subscribe only to its own quantity and
         line total.
       </div>
@@ -185,10 +183,12 @@ function SelectionList() {
   }
 
   return (
-    <div className="space-y-2">
-      {selectedProductIds.map((productId) => (
-        <SelectionRow key={productId} productId={productId} />
-      ))}
+    <div className="flex-1 min-h-0 overflow-auto">
+      <div className="space-y-2">
+        {selectedProductIds.map((productId) => (
+          <SelectionRow key={productId} productId={productId} />
+        ))}
+      </div>
     </div>
   )
 }
@@ -225,13 +225,21 @@ function SelectionRow({ productId }: { productId: string }) {
 }
 
 function SelectionQuantity({ productId }: { productId: string }) {
-  const quantity = useStoreSelector(PlannerStore, selectQuantityFor(productId))
+  const quantity = useStoreSelector(
+    PlannerStore,
+    (state) => state.selections[productId] ?? 0,
+  )
 
   return <Badge variant="outline">{quantity} in plan</Badge>
 }
 
 function LineTotal({ productId }: { productId: string }) {
-  const lineTotal = useStoreSelector(PlannerStore, selectLineTotal(productId))
+  const catalogItem = CATALOG_BY_ID[productId]
+  const quantity = useStoreSelector(
+    PlannerStore,
+    (state) => state.selections[productId] ?? 0,
+  )
+  const lineTotal = quantity * (catalogItem?.price ?? 0)
 
   return (
     <p className="mt-1 text-xs text-muted-foreground">
@@ -259,7 +267,7 @@ function RowRemoveButton({ productId }: { productId: string }) {
   const actions = usePlannerActions()
   const canRemove = useStoreSelector(
     PlannerStore,
-    selectCanRemoveItem(productId),
+    (state) => state.selections[productId] ?? 0 > 0,
   )
 
   return (
@@ -278,7 +286,10 @@ function RowRemoveButton({ productId }: { productId: string }) {
 
 function ClearPlanButton() {
   const actions = usePlannerActions()
-  const canClearPlan = useStoreSelector(PlannerStore, selectCanClearPlan)
+  const canClearPlan = useStoreSelector(
+    PlannerStore,
+    (state) => Object.keys(state.selections).length > 0,
+  )
 
   return (
     <Button
@@ -302,7 +313,7 @@ function LoadSamplePlanButton() {
       variant="outline"
       size="sm"
       onClick={() => {
-        actions.loadSamplePlan()
+        actions.loadSamplePlan(INITIAL_STATE)
       }}
     >
       <RotateCcw className="size-3.5" />

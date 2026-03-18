@@ -1,17 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { cn } from '@/lib/utils'
 
-export function StatCard({
-  detail,
-  label,
-  value,
-  className,
-}: {
+interface StatCardProps {
   className?: string
   detail: string
   label: string
   value: string
-}) {
+}
+
+export function StatCard({ detail, label, value, className }: StatCardProps) {
   return (
     <Card className={cn('shadow-none', className)} size="sm">
       <CardContent className="space-y-2 px-3">
