@@ -71,7 +71,7 @@ export function createPersistController<TState>(
 
     return {
       key: resolveKey(options.key),
-      enabled: options.enabled ?? pluginOptions?.enabled ?? true,
+      enabled: options.enabled ?? true,
       delay: options.delay ?? pluginOptions?.delay ?? 0,
       onPersist,
     }
