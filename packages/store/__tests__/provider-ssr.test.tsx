@@ -92,6 +92,19 @@ describe('StoreProvider — SSR', () => {
     expect(html).toContain('42')
   })
 
+  it('does not run initialize during server render when initialState is omitted', () => {
+    const builder = createStore<{ count: number }>()
+    const initialize = vi.fn(async () => {})
+
+    renderToString(
+      <StoreProvider builder={builder} initialize={initialize}>
+        <div>probe</div>
+      </StoreProvider>,
+    )
+
+    expect(initialize).not.toHaveBeenCalled()
+  })
+
   it('hydrates without a mismatch when initialState matches server render', async () => {
     const builder = createStore({ count: 0 })
 
