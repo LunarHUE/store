@@ -47,6 +47,7 @@
   },
   "scripts": {
     "build": "tsup",
+    "dev": "tsup --watch",
     "contract": "bun run build && node ./scripts/check-package-contract.mjs",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
