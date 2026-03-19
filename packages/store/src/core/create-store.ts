@@ -1,8 +1,18 @@
 
 import { createStoreInstance } from './store-instance'
 import { registerStoreBuilder } from './builder-registry'
+import {
+  createBuilderLoggerMetadata,
+  defineBuilderLoggerMetadata,
+  emitStoreDebugEvent,
+} from './logger'
 
-import type { Store, StoreBuilder, StorePlugin } from './types'
+import type {
+  Store,
+  StoreBuilder,
+  StoreCreateOptions,
+  StorePlugin,
+} from './types'
 
 /**
  * Declares a reusable store builder.
@@ -24,10 +34,18 @@ export function createStore<TState>(
   const createBuilder = <TPlugins>(
     plugins: PluginList,
   ): StoreBuilder<TState, TPlugins> => {
+    const loggerMetadata = createBuilderLoggerMetadata()
     const builder: StoreBuilder<TState, TPlugins> = {
-      create(overrideInitialState?: TState) {
-        const hasOverrideInitialState = arguments.length > 0
+      create(
+        overrideInitialState?: TState,
+        options?: StoreCreateOptions<TState>,
+      ) {
+        const hasOverrideInitialState = overrideInitialState !== undefined
         const controller = createStoreInstance({
+          builderId: loggerMetadata.builderId,
+          debug: options?.debug,
+          hasDeclaredInitialState,
+          hasOverrideInitialState,
           initialState: hasOverrideInitialState
             ? overrideInitialState
             : initialState,
@@ -36,6 +54,14 @@ export function createStore<TState>(
 
         for (const plugin of plugins) {
           const surface = plugin({
+            logger: {
+              emit(args) {
+                return emitStoreDebugEvent(
+                  controller.store as Store<TState, any>,
+                  args,
+                )
+              },
+            },
             store: controller.store as Store<TState, any>,
             onDispose: (cleanup) => controller.onDispose(cleanup),
           })
@@ -54,6 +80,8 @@ export function createStore<TState>(
         return createBuilder<TPlugins & TNextPlugins>([...plugins, plugin])
       },
     }
+
+    defineBuilderLoggerMetadata(builder, loggerMetadata)
 
     return builder
   }

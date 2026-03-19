@@ -74,6 +74,30 @@ Each runtime store instance has stable identity for its lifetime. The state
 inside it changes, but the store object itself is the thing plugins and React
 hold onto.
 
+## Built-in runtime debugging
+
+Runtime debugging is explicit and scoped to each created store instance. The
+package does not read env vars itself, so apps can decide how to wire that
+toggle for web, Next.js, or React Native.
+
+```ts
+const events = []
+const store = CounterStore.create(undefined, {
+  debug: {
+    level: 'trace',
+    console: false,
+    sink(event) {
+      events.push(event)
+    },
+  },
+})
+```
+
+Builder-owned `StoreProvider` and `PersistStoreProvider` accept the same
+`debug` option, and `useLocalStore(builder, { debug: ... })` forwards it for
+locally owned runtimes. Built-in event names autocomplete, but custom plugin
+events are allowed too.
+
 ## React usage
 
 The generic React layer gives you:
@@ -334,6 +358,7 @@ That means a plugin can:
 
 - read current state through `context.store.get()`
 - update state through `context.store.setState(...)`
+- emit custom debug events through `context.logger.emit(...)`
 - subscribe or inspect existing plugin surface on the store
 - register teardown logic through `onDispose(...)`
 - return a new plugin-owned surface that gets attached to the runtime store
@@ -352,7 +377,14 @@ type LoggerSurface = {
 export function logger<TState>(
   label: string,
 ): StorePlugin<TState, any, LoggerSurface> {
-  return ({ store, onDispose }) => {
+  return ({ store, logger, onDispose }) => {
+    logger.emit({
+      source: 'plugin.logger',
+      event: 'plugin.logger.ready',
+      minimumLevel: 'verbose',
+      detail: { label },
+    })
+
     const subscription = store.subscribe((state) => {
       console.log(label, state)
     })
@@ -375,7 +407,12 @@ Usage:
 ```ts
 const DebugStore = createStore({ ready: false }).extend(logger('debug'))
 
-const store = DebugStore.create()
+const store = DebugStore.create(undefined, {
+  debug: {
+    level: 'verbose',
+  },
+})
+
 store.logSnapshot()
 ```
 

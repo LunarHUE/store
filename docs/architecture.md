@@ -42,6 +42,9 @@ At runtime, a Lunarhue `Store<TState, TPlugins>` is the TanStack store instance 
 The runtime store object has stable identity for its lifetime. State changes do
 not replace the store instance itself.
 
+Runtime debug ids and logger metadata are attached as hidden core metadata, not
+as public store fields and not inside application state.
+
 ## Plugin model
 
 Plugins are additive and compositional:
@@ -55,6 +58,7 @@ const SubmissionStore = createStore({})
 Each plugin receives:
 
 - `store`
+- `logger`
 - `onDispose(cleanup)`
 
 Plugins never merge metadata into app state. They attach extra capability to the runtime store surface instead.

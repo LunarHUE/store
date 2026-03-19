@@ -2,7 +2,7 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createStore } from '../../../core'
+import { createStore, type StoreDebugEvent } from '../../../core'
 import { useSelector, useStore, useStoreSelector } from '../../../react'
 
 import { persist } from '../plugin'
@@ -296,6 +296,85 @@ describe('persist react bindings', () => {
 
     await waitFor(() => {
       expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  it('forwards debug config through builder-owned persist providers', async () => {
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+
+    render(
+      <PersistStoreProvider
+        builder={builder}
+        debug={{
+          console: false,
+          level: 'verbose',
+          sink(event) {
+            events.push(event)
+          },
+        }}
+        persist={{}}
+      >
+        <span>mounted</span>
+      </PersistStoreProvider>,
+    )
+
+    await waitFor(() => {
+      expect(
+        events.some((event) => event.event === 'persist.connected'),
+      ).toBe(true)
+    })
+  })
+
+  it('emits boundary flush events for pagehide and unmount', async () => {
+    const onPersist = vi.fn(async () => {})
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(persist())
+    let runtimeStore!: ReturnType<typeof builder.create>
+
+    const view = render(
+      <PersistStoreProvider
+        builder={builder}
+        debug={{
+          console: false,
+          level: 'verbose',
+          sink(event) {
+            events.push(event)
+          },
+        }}
+        flushOnPageHide
+        flushOnUnmount
+        persist={{
+          enabled: true,
+          delay: 1000,
+          onPersist,
+        }}
+      >
+        {({ store }) => {
+          runtimeStore = store
+          return <span>mounted</span>
+        }}
+      </PersistStoreProvider>,
+    )
+
+    act(() => {
+      runtimeStore.setState(() => ({ count: 1 }))
+    })
+
+    act(() => {
+      window.dispatchEvent(new Event('pagehide'))
+    })
+
+    view.unmount()
+
+    await waitFor(() => {
+      expect(
+        events.filter((event) => event.event === 'persist.boundary.flush'),
+      ).toHaveLength(2)
     })
   })
 

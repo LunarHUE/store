@@ -38,6 +38,27 @@ uninitialized runtime store. In that case, provide `initialState` or
 `loadInitialState` when using the React provider, or call
 `store.setInitialState(...)` before reading or writing state directly.
 
+## Runtime debugging
+
+Debugging is explicit and per runtime store instance.
+
+```ts
+const events = []
+const store = CounterStore.create(undefined, {
+  debug: {
+    level: 'trace',
+    console: false,
+    sink(event) {
+      events.push(event)
+    },
+  },
+})
+```
+
+Builder-owned `StoreProvider` and `PersistStoreProvider` also accept `debug`,
+and `useLocalStore(builder, { debug: ... })` forwards the same config for
+locally owned runtimes.
+
 ## React usage
 
 ```tsx

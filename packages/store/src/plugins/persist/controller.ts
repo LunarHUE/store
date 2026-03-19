@@ -5,6 +5,7 @@ import type {
   PersistRuntimeOptions,
 } from './types'
 import type { Store } from '../../core'
+import { emitStoreDebugEvent } from '../../core/logger'
 import { createStoreInstance } from '../../core/store-instance'
 
 const DEFAULT_META: PersistMeta = {
@@ -105,6 +106,14 @@ export function createPersistController<TState>(
       pending: true,
       error: null,
     }))
+
+    emitStoreDebugEvent(store, {
+      event: 'persist.transition.queued',
+      minimumLevel: 'verbose',
+      nextState,
+      previousState,
+      source: 'persist',
+    })
   }
 
   const canPersist = () => {
@@ -119,6 +128,14 @@ export function createPersistController<TState>(
     clearTimer()
 
     const delay = state.runtimeOptions?.delay ?? 0
+    emitStoreDebugEvent(store, {
+      detail: {
+        delay,
+      },
+      event: 'persist.flush.scheduled',
+      minimumLevel: 'verbose',
+      source: 'persist',
+    })
     state.timer = setTimeout(() => {
       void flush()
     }, delay)
@@ -131,6 +148,18 @@ export function createPersistController<TState>(
       return
     }
 
+    const nextState = pluginOptions?.serializeState
+      ? pluginOptions.serializeState(transition.nextState)
+      : transition.nextState
+
+    emitStoreDebugEvent(store, {
+      event: 'persist.flush.started',
+      minimumLevel: 'verbose',
+      nextState,
+      previousState: transition.previousState,
+      source: 'persist',
+    })
+
     meta.setState((prev) => ({
       ...prev,
       pending: false,
@@ -139,10 +168,6 @@ export function createPersistController<TState>(
     }))
 
     try {
-      const nextState = pluginOptions?.serializeState
-        ? pluginOptions.serializeState(transition.nextState)
-        : transition.nextState
-
       await runtimeOptions.onPersist({
         previousState: transition.previousState,
         nextState,
@@ -154,6 +179,13 @@ export function createPersistController<TState>(
         lastPersistedAt: Date.now(),
         error: null,
       }))
+      emitStoreDebugEvent(store, {
+        event: 'persist.flush.completed',
+        minimumLevel: 'verbose',
+        nextState,
+        previousState: transition.previousState,
+        source: 'persist',
+      })
     } catch (error) {
       state.pendingTransition = transition
 
@@ -163,6 +195,14 @@ export function createPersistController<TState>(
         persisting: false,
         error,
       }))
+
+      emitStoreDebugEvent(store, {
+        error,
+        event: 'persist.flush.failed',
+        nextState,
+        previousState: transition.previousState,
+        source: 'persist',
+      })
 
       throw error
     }
@@ -225,6 +265,14 @@ export function createPersistController<TState>(
       resetState()
       state.connected = true
       ensureSubscription()
+      emitStoreDebugEvent(store, {
+        detail: {
+          delay: state.runtimeOptions.delay,
+          enabled: state.runtimeOptions.enabled,
+        },
+        event: 'persist.connected',
+        source: 'persist',
+      })
 
       return () => {
         state.connected = false
@@ -234,6 +282,14 @@ export function createPersistController<TState>(
           ...prev,
           persisting: false,
         }))
+        emitStoreDebugEvent(store, {
+          detail: {
+            delay: state.runtimeOptions?.delay ?? 0,
+            enabled: state.runtimeOptions?.enabled ?? false,
+          },
+          event: 'persist.disconnected',
+          source: 'persist',
+        })
       }
     },
     flush,

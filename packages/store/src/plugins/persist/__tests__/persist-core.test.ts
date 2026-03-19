@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createStore } from '../../../core'
+import { createStore, type StoreDebugEvent } from '../../../core'
 
 import { persist } from '../plugin'
 import type {
@@ -254,5 +254,88 @@ describe('persist core', () => {
     await store.persist.flush()
 
     expect(onPersist).toHaveBeenCalledTimes(2)
+  })
+
+  it('emits persist runtime events through the store debug sink', async () => {
+    vi.useFakeTimers()
+
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create(undefined, {
+      debug: {
+        console: false,
+        level: 'trace',
+        sink(event) {
+          events.push(event)
+        },
+      },
+    })
+    const disconnect = getPersistController(store).connect(store, {
+      delay: 50,
+      enabled: true,
+      onPersist: async () => {},
+    })
+
+    store.setState(() => ({ count: 1 }))
+    await vi.advanceTimersByTimeAsync(50)
+    disconnect()
+
+    expect(events.some((event) => event.event === 'persist.connected')).toBe(
+      true,
+    )
+    expect(
+      events.some((event) => event.event === 'persist.transition.queued'),
+    ).toBe(true)
+    expect(events.some((event) => event.event === 'persist.flush.scheduled')).toBe(
+      true,
+    )
+    expect(events.some((event) => event.event === 'persist.flush.started')).toBe(
+      true,
+    )
+    expect(
+      events.some((event) => event.event === 'persist.flush.completed'),
+    ).toBe(true)
+    expect(events.some((event) => event.event === 'persist.disconnected')).toBe(
+      true,
+    )
+
+    const completedEvent = events.find(
+      (event) => event.event === 'persist.flush.completed',
+    )
+
+    expect(completedEvent?.previousState).toEqual({ count: 0 })
+    expect(completedEvent?.nextState).toEqual({ count: 1 })
+  })
+
+  it('emits persist failures through the store debug sink', async () => {
+    const failure = new Error('persist failed')
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create(undefined, {
+      debug: {
+        console: false,
+        level: 'trace',
+        sink(event) {
+          events.push(event)
+        },
+      },
+    })
+
+    getPersistController(store).connect(store, {
+      enabled: true,
+      onPersist: async () => {
+        throw failure
+      },
+    })
+
+    store.setState(() => ({ count: 1 }))
+
+    await expect(store.persist.flush()).rejects.toThrow('persist failed')
+    expect(
+      events.some(
+        (event) =>
+          event.event === 'persist.flush.failed' && event.error === failure,
+      ),
+    ).toBe(true)
   })
 })

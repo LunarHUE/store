@@ -3,7 +3,11 @@
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createStore, type StorePlugin } from '../src/core'
+import {
+  createStore,
+  type StoreDebugEvent,
+  type StorePlugin,
+} from '../src/core'
 import {
   StoreProvider,
   useLocalStore,
@@ -182,5 +186,77 @@ describe('react bindings', () => {
 
     expect(ownedCleanupSpy).toHaveBeenCalledTimes(1)
     expect(externalCleanupSpy).not.toHaveBeenCalled()
+  })
+
+  it('forwards debug config through builder-owned providers', async () => {
+    const builder = createStore<{ count: number }>()
+    const events: StoreDebugEvent<{ count: number }>[] = []
+
+    render(
+      <StoreProvider
+        builder={builder}
+        debug={{
+          console: false,
+          level: 'verbose',
+          sink(event) {
+            events.push(event)
+          },
+        }}
+        loadInitialState={async () => ({ count: 8 })}
+      >
+        {({ store }) => <span>{store.get().count}</span>}
+      </StoreProvider>,
+    )
+
+    await screen.findByText('8')
+
+    expect(events.some((event) => event.event === 'provider.mount')).toBe(true)
+    expect(
+      events.some((event) => event.event === 'provider.initialize.started'),
+    ).toBe(true)
+    expect(
+      events.some((event) => event.event === 'provider.initialize.completed'),
+    ).toBe(true)
+    expect(
+      events.some((event) => event.event === 'store.lifecycle.changed'),
+    ).toBe(true)
+  })
+
+  it('forwards debug config through local stores', async () => {
+    const builder = createStore<{ count: number }>()
+    const events: StoreDebugEvent<{ count: number }>[] = []
+
+    function Probe() {
+      const localStore = useLocalStore(builder, {
+        debug: {
+          console: false,
+          level: 'verbose',
+          sink(event) {
+            events.push(event)
+          },
+        },
+        loadInitialState: async () => ({ count: 5 }),
+      })
+
+      if (localStore.lifecycle.meta.get().status !== 'ready') {
+        return <span>loading</span>
+      }
+
+      return <span>{localStore.get().count}</span>
+    }
+
+    render(<Probe />)
+
+    await screen.findByText('5')
+
+    expect(
+      events.some((event) => event.event === 'local.initialize.started'),
+    ).toBe(true)
+    expect(
+      events.some((event) => event.event === 'local.initialize.completed'),
+    ).toBe(true)
+    expect(
+      events.some((event) => event.event === 'store.lifecycle.changed'),
+    ).toBe(true)
   })
 })

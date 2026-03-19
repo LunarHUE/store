@@ -5,8 +5,17 @@ import {
   type Subscription,
 } from '@tanstack/store'
 
+import {
+  createStoreLoggerMetadata,
+  createSubscriptionLoggerId,
+  defineStoreLoggerMetadata,
+  emitStoreDebugEvent,
+  transitionStoreLifecycle,
+} from './logger'
+
 import type {
   StoreCleanup,
+  StoreCreateOptions,
   Store,
   StoreLifecycleMeta,
   ReadableStore,
@@ -19,6 +28,10 @@ type StoreController<TState> = {
 }
 
 type CreateStoreInstanceOptions<TState> = {
+  builderId?: string
+  debug?: StoreCreateOptions<TState>['debug']
+  hasDeclaredInitialState?: boolean
+  hasOverrideInitialState?: boolean
   initialState?: TState
   readyOnCreate: boolean
 }
@@ -26,6 +39,10 @@ type CreateStoreInstanceOptions<TState> = {
 const UNINITIALIZED = Symbol('lunarhue.store.uninitialized')
 
 export function createStoreInstance<TState>({
+  builderId = 'b0',
+  debug,
+  hasDeclaredInitialState,
+  hasOverrideInitialState,
   initialState,
   readyOnCreate,
 }: CreateStoreInstanceOptions<TState>): StoreController<TState> {
@@ -52,6 +69,17 @@ export function createStoreInstance<TState>({
   const nativeSetState = store.setState.bind(store)
   const nativeSubscribe = store.subscribe.bind(store)
   const instance = store as unknown as Store<TState>
+  const lifecycleMetaStore = lifecycleMeta as WritableReadableStore<
+    StoreLifecycleMeta
+  >
+
+  defineStoreLoggerMetadata(
+    instance,
+    createStoreLoggerMetadata({
+      builderId,
+      debug,
+    }),
+  )
 
   const assertReady = (value: TState | typeof UNINITIALIZED): TState => {
     if (value === UNINITIALIZED) {
@@ -70,6 +98,7 @@ export function createStoreInstance<TState>({
     error?: (error: any) => void,
     complete?: () => void,
   ): Subscription => {
+    const subscriptionId = createSubscriptionLoggerId()
     const observer =
       typeof observerOrFn === 'function'
         ? {
@@ -78,14 +107,49 @@ export function createStoreInstance<TState>({
             complete,
           }
         : observerOrFn
+    const observerKind =
+      typeof observerOrFn === 'function' ? 'function' : 'observer'
 
-    return nativeSubscribe({
+    emitStoreDebugEvent(instance, {
+      detail: { observerKind },
+      event: 'subscription.connected',
+      source: 'core',
+      subscriptionId,
+    })
+
+    const subscription = nativeSubscribe({
       next(value) {
         if (value === UNINITIALIZED) {
+          emitStoreDebugEvent(instance, {
+            event: 'subscription.notify.skipped_uninitialized',
+            minimumLevel: 'trace',
+            source: 'core',
+            subscriptionId,
+          })
           return
         }
 
-        observer.next?.(value)
+        emitStoreDebugEvent(instance, {
+          event: 'subscription.notify',
+          minimumLevel: 'verbose',
+          nextState: value,
+          source: 'core',
+          subscriptionId,
+        })
+
+        try {
+          observer.next?.(value)
+        } catch (notifyError) {
+          emitStoreDebugEvent(instance, {
+            error: notifyError,
+            event: 'subscription.notify.error',
+            minimumLevel: 'trace',
+            nextState: value,
+            source: 'core',
+            subscriptionId,
+          })
+          throw notifyError
+        }
       },
       error(err) {
         observer.error?.(err)
@@ -94,6 +158,23 @@ export function createStoreInstance<TState>({
         observer.complete?.()
       },
     })
+    let unsubscribed = false
+
+    return {
+      unsubscribe() {
+        if (unsubscribed) {
+          return
+        }
+
+        unsubscribed = true
+        subscription.unsubscribe()
+        emitStoreDebugEvent(instance, {
+          event: 'subscription.disconnected',
+          source: 'core',
+          subscriptionId,
+        })
+      },
+    }
   }
 
   Object.defineProperty(instance, 'dispose', {
@@ -104,10 +185,20 @@ export function createStoreInstance<TState>({
         return disposePromise
       }
 
+      emitStoreDebugEvent(instance, {
+        event: 'store.dispose.started',
+        source: 'core',
+      })
+
       disposePromise = (async () => {
         for (const cleanup of [...cleanups].reverse()) {
           await cleanup()
         }
+
+        emitStoreDebugEvent(instance, {
+          event: 'store.dispose.completed',
+          source: 'core',
+        })
       })()
 
       return disposePromise
@@ -131,7 +222,36 @@ export function createStoreInstance<TState>({
       configurable: true,
       enumerable: true,
       value: (updater: (prev: TState) => TState) => {
-        nativeSetState((prev) => updater(assertReady(prev)))
+        let previousState: TState | undefined
+        let nextState: TState | undefined
+
+        try {
+          nativeSetState((prev) => {
+            const readyPreviousState = assertReady(prev)
+            previousState = readyPreviousState
+            nextState = updater(readyPreviousState)
+
+            return nextState
+          })
+        } catch (stateError) {
+          emitStoreDebugEvent(instance, {
+            error: stateError,
+            event: 'store.state.set.error',
+            minimumLevel: 'trace',
+            nextState,
+            previousState,
+            source: 'core',
+          })
+          throw stateError
+        }
+
+        emitStoreDebugEvent(instance, {
+          event: 'store.state.set',
+          minimumLevel: 'verbose',
+          nextState,
+          previousState,
+          source: 'core',
+        })
       },
     },
     subscribe: {
@@ -143,15 +263,41 @@ export function createStoreInstance<TState>({
       configurable: true,
       enumerable: true,
       value: async (nextState: TState) => {
-        if (nativeGet() !== UNINITIALIZED) {
-          throw new Error('Store initial state has already been set.')
+        try {
+          if (nativeGet() !== UNINITIALIZED) {
+            throw new Error('Store initial state has already been set.')
+          }
+
+          nativeSetState(() => nextState)
+        } catch (initialStateError) {
+          emitStoreDebugEvent(instance, {
+            error: initialStateError,
+            event: 'store.initial_state.set.error',
+            minimumLevel: 'trace',
+            nextState,
+            source: 'core',
+          })
+          throw initialStateError
         }
 
-        nativeSetState(() => nextState)
-        lifecycleMeta.setState(() => ({
-          status: 'ready',
-          error: null,
-        }))
+        emitStoreDebugEvent(instance, {
+          event: 'store.initial_state.set',
+          minimumLevel: 'verbose',
+          nextState,
+          source: 'core',
+        })
+
+        transitionStoreLifecycle(
+          instance,
+          lifecycleMetaStore,
+          {
+            status: 'ready',
+            error: null,
+          },
+          {
+            source: 'core',
+          },
+        )
       },
     },
     lifecycle: {
@@ -159,6 +305,16 @@ export function createStoreInstance<TState>({
       enumerable: true,
       value: lifecycle,
     },
+  })
+
+  emitStoreDebugEvent(instance, {
+    detail: {
+      hasDeclaredInitialState: hasDeclaredInitialState ?? false,
+      hasOverrideInitialState: hasOverrideInitialState ?? false,
+    },
+    event: 'store.created',
+    source: 'core',
+    status: readyOnCreate ? 'ready' : 'uninitialized',
   })
 
   return {
@@ -179,4 +335,8 @@ export function createStoreInstance<TState>({
       )
     },
   }
+}
+
+type WritableReadableStore<TState> = ReadableStore<TState> & {
+  setState(updater: (prev: TState) => TState): void
 }

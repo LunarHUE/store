@@ -7,7 +7,12 @@ import {
   useEffectEvent,
 } from 'react'
 
-import type { StoreBuilder, StoreInitialStateLoader } from '../../core'
+import { emitStoreDebugEvent } from '../../core/logger'
+import type {
+  StoreBuilder,
+  StoreDebugOptions,
+  StoreInitialStateLoader,
+} from '../../core'
 import { getStoreBuilder } from '../../core/builder-registry'
 import { StoreProvider } from '../../react'
 
@@ -70,6 +75,7 @@ type PersistStoreProviderChildren<TState, TPlugins> =
 type BuilderPersistStoreProviderBaseProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
   children?: PersistStoreProviderChildren<TState, TPlugins>
+  debug?: StoreDebugOptions<TState>
   persist?: PersistRuntimeOptions<TState>
   store?: never
 } & PersistenceBoundaryOptions
@@ -197,6 +203,14 @@ function usePersistenceBoundary<TState>(
     }
 
     return () => {
+      emitStoreDebugEvent(store, {
+        detail: {
+          trigger: 'unmount',
+        },
+        event: 'persist.boundary.flush',
+        minimumLevel: 'verbose',
+        source: 'persist',
+      })
       void store.persist.flush()
     }
   }, [flushOnUnmount, store])
@@ -207,6 +221,14 @@ function usePersistenceBoundary<TState>(
     }
 
     const handlePageHide = () => {
+      emitStoreDebugEvent(store, {
+        detail: {
+          trigger: 'pagehide',
+        },
+        event: 'persist.boundary.flush',
+        minimumLevel: 'verbose',
+        source: 'persist',
+      })
       void store.persist.flush()
     }
 
@@ -317,7 +339,11 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
     const initialState = props.initialState as TState
 
     return (
-      <StoreProvider builder={props.builder} initialState={initialState}>
+      <StoreProvider
+        builder={props.builder}
+        debug={props.debug}
+        initialState={initialState}
+      >
         {({ store }) => content(store as PersistedStore<TState, TPlugins>)}
       </StoreProvider>
     )
@@ -327,6 +353,7 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
     return (
       <StoreProvider
         builder={props.builder}
+        debug={props.debug}
         loadInitialState={props.loadInitialState}
       >
         {({ store }) => content(store as PersistedStore<TState, TPlugins>)}
@@ -335,7 +362,7 @@ export function PersistStoreProvider<TState, TPlugins = {}>(
   }
 
   return (
-    <StoreProvider builder={props.builder}>
+    <StoreProvider builder={props.builder} debug={props.debug}>
       {({ store }) => content(store as PersistedStore<TState, TPlugins>)}
     </StoreProvider>
   )
