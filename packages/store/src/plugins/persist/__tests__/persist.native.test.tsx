@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, jest } from '@jest/globals'
 import { act, renderAsync } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
-import { createStore } from '../../../core'
+import { createStore, type StoreDebugEvent } from '../../../core'
 import { useSelector, useStore, useStoreSelector } from '../../../react'
 
 import { persist } from '../plugin'
@@ -149,4 +149,35 @@ describe('persist react bindings (native renderer)', () => {
   it.todo(
     'flushes queued work when the app backgrounds via React Native AppState',
   )
+
+  it('emits debug events through builder-owned native persist providers', async () => {
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+
+    const result = await renderAsync(
+      <PersistStoreProvider
+        builder={builder}
+        debug={{
+          console: false,
+          level: 'verbose',
+          sink(event) {
+            events.push(event)
+          },
+        }}
+        persist={{}}
+      >
+        <Text>mounted</Text>
+      </PersistStoreProvider>,
+    )
+
+    expect(events.some((event) => event.event === 'persist.connected')).toBe(
+      true,
+    )
+
+    await result.unmountAsync()
+  })
 })
