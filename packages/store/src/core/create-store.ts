@@ -2,7 +2,12 @@
 import { createStoreInstance } from './store-instance'
 import { registerStoreBuilder } from './builder-registry'
 
-import type { Store, StoreBuilder, StorePlugin } from './types'
+import type {
+  Store,
+  StoreBuilder,
+  StoreCreateOptions,
+  StorePlugin,
+} from './types'
 
 /**
  * Declares a reusable store builder.
@@ -25,8 +30,11 @@ export function createStore<TState>(
     plugins: PluginList,
   ): StoreBuilder<TState, TPlugins> => {
     const builder: StoreBuilder<TState, TPlugins> = {
-      create(overrideInitialState?: TState) {
-        const hasOverrideInitialState = arguments.length > 0
+      create(
+        overrideInitialState?: TState,
+        _options?: StoreCreateOptions<TState>,
+      ) {
+        const hasOverrideInitialState = overrideInitialState !== undefined
         const controller = createStoreInstance({
           initialState: hasOverrideInitialState
             ? overrideInitialState

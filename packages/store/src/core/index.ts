@@ -1,7 +1,13 @@
 export { createStore } from './create-store'
 export type {
+  StoreCreateOptions,
   ReadableStore,
   StoreCleanup,
+  StoreDebugEvent,
+  StoreDebugEventName,
+  StoreDebugLevel,
+  StoreDebugOptions,
+  StoreDebugSink,
   StorePlugin,
   StorePluginContext,
   StoreBuilder,

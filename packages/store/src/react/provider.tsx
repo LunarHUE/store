@@ -154,7 +154,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
 
   if (!storeRef.current) {
     storeRef.current = hasInitialState
-      ? builder.create(initialState)
+      ? builder.create(initialState as TState)
       : builder.create()
   }
 

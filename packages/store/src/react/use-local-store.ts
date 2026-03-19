@@ -45,7 +45,7 @@ export function useLocalStore<TState, TPlugins>(
 
   if (!localStoreRef.current) {
     localStoreRef.current = hasInitialState
-      ? builder.create(options?.initialState)
+      ? builder.create(options?.initialState as TState)
       : builder.create()
   }
 
