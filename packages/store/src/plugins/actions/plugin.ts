@@ -44,6 +44,12 @@ function bindActions<TState, TActions>(
   return boundActions
 }
 
+/**
+ * Declares a reusable typed action definition.
+ *
+ * The returned definition is inert until the actions plugin binds it to a
+ * runtime store during store creation.
+ */
 export function createAction<
   TState,
   TArgs extends unknown[] = [],
@@ -59,6 +65,13 @@ export function createAction<
   } as InternalActionDefinition<TState, TArgs, TReturn>
 }
 
+/**
+ * Attaches typed actions to `store.actions`.
+ *
+ * Inline action functions and reusable definitions created with
+ * {@link createAction} can be mixed in the same surface. All actions receive
+ * `getState` and `setState` helpers bound to the runtime store instance.
+ */
 export function actions<TState, TActions>(
   builder: (helpers: {
     getState: () => TState
