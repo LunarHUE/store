@@ -3,6 +3,7 @@ import { Fraunces, IBM_Plex_Sans } from 'next/font/google'
 
 import './globals.css'
 import { cn } from '@/lib/utils'
+import Script from 'next/script'
 
 const bodyFont = IBM_Plex_Sans({
   subsets: ['latin'],
@@ -28,6 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn(bodyFont.variable, displayFont.variable)}>
+      <head>
+        <Script
+          src="//unpkg.com/react-scan/dist/auto.global.js"
+          crossOrigin="anonymous"
+          strategy="beforeInteractive"
+        />
+      </head>
       <body className="min-h-screen bg-background text-foreground antialiased">
         {children}
       </body>
