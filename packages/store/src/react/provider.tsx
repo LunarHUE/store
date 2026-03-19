@@ -65,10 +65,27 @@ type StoreProviderProps<TState, TPlugins> = {
   store: Store<TState, TPlugins>
 }
 
+/**
+ * Props for {@link StoreProvider}.
+ *
+ * Use either `builder` to let the provider create and own the runtime store,
+ * or `store` to provide an already-created runtime store. When a builder has
+ * no declared initial state, the builder-owned form must also provide either
+ * `initialState` or `loadInitialState`.
+ */
 export type ProviderProps<TState, TPlugins = {}> =
   | BuilderProviderProps<TState, TPlugins>
   | StoreProviderProps<TState, TPlugins>
 
+/**
+ * Provides a builder-scoped runtime store to React descendants.
+ *
+ * Builder-owned providers create and dispose the runtime store automatically.
+ * External-store providers reuse an existing runtime store and do not own its
+ * disposal. The `builder` prop must remain stable for the provider lifetime.
+ * Children may be plain JSX or a render prop that receives the resolved
+ * runtime store instance.
+ */
 export function StoreProvider<TState, TPlugins>(
   props: ProviderProps<TState, TPlugins>,
 ) {

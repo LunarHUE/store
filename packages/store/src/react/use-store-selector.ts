@@ -3,6 +3,12 @@ import { useSelector } from './use-selector'
 
 import type { StoreBuilder, StoreState } from '../core'
 
+/**
+ * Convenience hook that resolves a builder-scoped runtime store from context
+ * and subscribes to a selected slice of its state.
+ *
+ * This has the same matching-provider requirement as {@link useStore}.
+ */
 export function useStoreSelector<
   TState,
   TPlugins,
