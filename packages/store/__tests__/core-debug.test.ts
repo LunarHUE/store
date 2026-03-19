@@ -162,4 +162,37 @@ describe('core debugger', () => {
       expect.any(Error),
     )
   })
+
+  it('lets plugins emit custom debug events through the plugin logger', () => {
+    const events: StoreDebugEvent<{ count: number }>[] = []
+    const builder = createStore({ count: 0 }).extend(({ logger }) => {
+      logger.emit({
+        detail: {
+          plugin: 'custom',
+        },
+        event: 'plugin.ready',
+        minimumLevel: 'verbose',
+        source: 'custom-plugin',
+      })
+
+      return {}
+    })
+
+    builder.create(undefined, {
+      debug: {
+        console: false,
+        level: 'verbose',
+        sink(event) {
+          events.push(event)
+        },
+      },
+    })
+
+    expect(
+      events.some(
+        (event) =>
+          event.source === 'custom-plugin' && event.event === 'plugin.ready',
+      ),
+    ).toBe(true)
+  })
 })

@@ -4,6 +4,7 @@ import { registerStoreBuilder } from './builder-registry'
 import {
   createBuilderLoggerMetadata,
   defineBuilderLoggerMetadata,
+  emitStoreDebugEvent,
 } from './logger'
 
 import type {
@@ -53,6 +54,14 @@ export function createStore<TState>(
 
         for (const plugin of plugins) {
           const surface = plugin({
+            logger: {
+              emit(args) {
+                return emitStoreDebugEvent(
+                  controller.store as Store<TState, any>,
+                  args,
+                )
+              },
+            },
             store: controller.store as Store<TState, any>,
             onDispose: (cleanup) => controller.onDispose(cleanup),
           })

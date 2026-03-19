@@ -57,6 +57,22 @@ export type StoreDebugEvent<TState> = {
 
 export type StoreDebugSink<TState> = (event: StoreDebugEvent<TState>) => void
 
+export type StoreDebugLogArgs<TState> = {
+  source: string
+  event: StoreDebugEventName
+  minimumLevel?: StoreDebugLevel
+  status?: StoreLifecycleStatus
+  detail?: Record<string, unknown>
+  previousState?: TState
+  nextState?: TState
+  error?: unknown
+  subscriptionId?: string
+}
+
+export type StoreLogger<TState> = {
+  emit(args: StoreDebugLogArgs<TState>): StoreDebugEvent<TState> | null
+}
+
 export type StoreDebugOptions<TState> = {
   /**
    * Selects how much detail is emitted.
@@ -171,6 +187,10 @@ export type StorePluginContext<TState, TPlugins> = {
    * Runtime store instance being extended.
    */
   store: Store<TState, TPlugins>
+  /**
+   * Emits opt-in runtime debug events for this store.
+   */
+  logger: StoreLogger<TState>
   /**
    * Registers cleanup work to run when the runtime store is disposed.
    */

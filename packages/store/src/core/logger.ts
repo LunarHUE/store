@@ -3,6 +3,7 @@ import type {
   StoreDebugEvent,
   StoreDebugEventName,
   StoreDebugLevel,
+  StoreDebugLogArgs,
   StoreDebugOptions,
   StoreLifecycleMeta,
 } from './types'
@@ -118,17 +119,7 @@ export function shouldEmitStoreDebugEvent(
 
 export function emitStoreDebugEvent<TState>(
   store: Store<TState, any>,
-  args: {
-    event: StoreDebugEventName
-    source: string
-    minimumLevel?: StoreDebugLevel
-    status?: StoreLifecycleMeta['status']
-    subscriptionId?: string
-    detail?: Record<string, unknown>
-    previousState?: TState
-    nextState?: TState
-    error?: unknown
-  },
+  args: StoreDebugLogArgs<TState>,
 ): StoreDebugEvent<TState> | null {
   const metadata = getStoreLoggerMetadata(store)
 
