@@ -25,6 +25,28 @@ import {
   type PersistedStore,
 } from './types'
 
+type AppStateStatus = 'active' | 'inactive' | 'background' | (string & {})
+
+type ReactNativeAppStateSubscription = {
+  remove(): void
+}
+
+type ReactNativeRuntimeModule = {
+  AppState?: {
+    currentState?: AppStateStatus
+    addEventListener(
+      type: 'change',
+      listener: (nextState: AppStateStatus) => void,
+    ): ReactNativeAppStateSubscription
+  }
+  Platform?: {
+    OS?: string
+  }
+}
+
+type RuntimeRequire = (specifier: string) => ReactNativeRuntimeModule
+type RuntimeImport = (specifier: string) => Promise<ReactNativeRuntimeModule>
+
 /**
  * Value returned by {@link usePersistentStore} and the
  * `PersistStoreProvider` render prop.
@@ -45,9 +67,10 @@ export type PersistentStoreResult<TState, TPlugins = {}> = {
  */
 export type PersistenceBoundaryOptions = {
   /**
-   * Reserved for non-web background lifecycle support.
+   * Flushes pending persistence work when React Native `AppState` leaves
+   * `active`.
    *
-   * On web this is currently a no-op.
+   * On web this remains a no-op.
    */
   flushOnBackground?: boolean
   /**
@@ -128,6 +151,64 @@ export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | BuilderPersistStoreProviderProps<TState, TPlugins>
   | ExternalPersistStoreProviderProps<TState, TPlugins>
 
+function resolveReactNativeAppState(
+  runtimeModule: ReactNativeRuntimeModule | null,
+): ReactNativeRuntimeModule['AppState'] | null {
+  if (!runtimeModule) {
+    return null
+  }
+
+  if (runtimeModule.Platform?.OS === 'web') {
+    return null
+  }
+
+  return runtimeModule.AppState ?? null
+}
+
+function loadReactNativeAppStateSync(): ReactNativeRuntimeModule['AppState'] | null {
+  let runtimeRequire: RuntimeRequire | undefined
+
+  try {
+    runtimeRequire = Function(
+      'return typeof require === "function" ? require : undefined',
+    )() as RuntimeRequire | undefined
+  } catch {
+    return null
+  }
+
+  if (!runtimeRequire) {
+    return null
+  }
+
+  try {
+    return resolveReactNativeAppState(runtimeRequire('react-native'))
+  } catch {
+    return null
+  }
+}
+
+async function loadReactNativeAppStateAsync(): Promise<
+  ReactNativeRuntimeModule['AppState'] | null
+> {
+  const specifier = 'react-native'
+  let runtimeImport: RuntimeImport
+
+  try {
+    runtimeImport = Function(
+      'specifier',
+      'return import(specifier)',
+    ) as RuntimeImport
+  } catch {
+    return null
+  }
+
+  try {
+    return resolveReactNativeAppState(await runtimeImport(specifier))
+  } catch {
+    return null
+  }
+}
+
 function getPersistStoreContext<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
 ): PersistStoreContext<TState, TPlugins> {
@@ -192,6 +273,21 @@ export function usePersistentStore<TState, TPlugins>(
   return contextValue
 }
 
+function flushPersistenceBoundary<TState>(
+  store: PersistedStore<TState>,
+  trigger: 'background' | 'pagehide' | 'unmount',
+) {
+  emitStoreDebugEvent(store, {
+    detail: {
+      trigger,
+    },
+    event: 'persist.boundary.flush',
+    minimumLevel: 'verbose',
+    source: 'persist',
+  })
+  void store.persist.flush()
+}
+
 function usePersistenceBoundary<TState>(
   store: PersistedStore<TState>,
   options: PersistenceBoundaryOptions,
@@ -203,15 +299,7 @@ function usePersistenceBoundary<TState>(
     }
 
     return () => {
-      emitStoreDebugEvent(store, {
-        detail: {
-          trigger: 'unmount',
-        },
-        event: 'persist.boundary.flush',
-        minimumLevel: 'verbose',
-        source: 'persist',
-      })
-      void store.persist.flush()
+      flushPersistenceBoundary(store, 'unmount')
     }
   }, [flushOnUnmount, store])
 
@@ -221,15 +309,7 @@ function usePersistenceBoundary<TState>(
     }
 
     const handlePageHide = () => {
-      emitStoreDebugEvent(store, {
-        detail: {
-          trigger: 'pagehide',
-        },
-        event: 'persist.boundary.flush',
-        minimumLevel: 'verbose',
-        source: 'persist',
-      })
-      void store.persist.flush()
+      flushPersistenceBoundary(store, 'pagehide')
     }
 
     window.addEventListener('pagehide', handlePageHide)
@@ -244,8 +324,50 @@ function usePersistenceBoundary<TState>(
       return
     }
 
-    // Web has no app background lifecycle equivalent here yet.
-  }, [flushOnBackground])
+    const subscribeToAppState = (
+      appState: NonNullable<ReactNativeRuntimeModule['AppState']>,
+    ) => {
+      previousAppState = appState.currentState ?? 'active'
+      return appState.addEventListener('change', (nextAppState) => {
+        // Flush as soon as React Native leaves the active foreground state.
+        const shouldFlush =
+          previousAppState === 'active' &&
+          (nextAppState === 'inactive' || nextAppState === 'background')
+
+        previousAppState = nextAppState
+
+        if (!shouldFlush) {
+          return
+        }
+
+        flushPersistenceBoundary(store, 'background')
+      })
+    }
+
+    let disposed = false
+    let subscription: ReactNativeAppStateSubscription | null = null
+    let previousAppState: AppStateStatus = 'active'
+    const synchronousAppState = loadReactNativeAppStateSync()
+
+    if (synchronousAppState) {
+      subscription = subscribeToAppState(synchronousAppState)
+    } else {
+      void (async () => {
+        const appState = await loadReactNativeAppStateAsync()
+
+        if (!appState || disposed) {
+          return
+        }
+
+        subscription = subscribeToAppState(appState)
+      })()
+    }
+
+    return () => {
+      disposed = true
+      subscription?.remove()
+    }
+  }, [flushOnBackground, store])
 }
 
 interface PersistStoreProviderContentProps<
@@ -287,8 +409,9 @@ function PersistStoreProviderContent<TState, TPlugins>({
  *
  * This composes the core {@link StoreProvider} and connects persistence
  * runtime options such as `enabled`, `delay`, and `onPersist` for the mounted
- * boundary. On web, `flushOnBackground` is currently accepted but does not
- * perform any additional work.
+ * boundary. `flushOnPageHide` is web-only, while `flushOnBackground` flushes
+ * queued work when React Native `AppState` leaves `active` and remains a no-op
+ * on web.
  */
 export function PersistStoreProvider<TState, TPlugins = {}>(
   props: PersistStoreProviderProps<TState, TPlugins>,

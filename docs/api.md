@@ -348,7 +348,11 @@ Rules:
 - runtime `persist` options override declaration-time defaults
 - `flushOnUnmount` flushes pending work when the provider unmounts
 - `flushOnPageHide` flushes pending work on the browser `pagehide` event
-- `flushOnBackground` is currently a web no-op
+- `flushOnBackground` flushes queued work when React Native `AppState` leaves `active`
+- `flushOnBackground` remains a web no-op
+
+Delayed persistence still depends on real store state transitions, so action
+callbacks that intend to mutate state must call `setState(...)`.
 
 Example:
 

@@ -328,7 +328,15 @@ function App() {
 On web:
 
 - `flushOnPageHide` is implemented
-- `flushOnBackground` is accepted but currently a no-op
+- `flushOnBackground` remains a no-op
+
+On React Native:
+
+- `flushOnBackground` flushes queued persistence work when `AppState` leaves `active`
+- `flushOnPageHide` has no effect
+
+Delayed persistence still depends on real store state transitions, so action
+callbacks that intend to mutate state must call `setState(...)`.
 
 ## How plugins work
 

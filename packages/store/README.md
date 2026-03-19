@@ -89,6 +89,10 @@ export function App() {
 Action helpers mutate runtime state only through `setState(...)`. Returning a
 next-state object from an action does not update the store by itself.
 
+For persistence boundaries, `flushOnPageHide` is web-only and
+`flushOnBackground` flushes queued work when React Native `AppState` leaves
+`active`.
+
 ## Docs
 
 - Repo README: <https://github.com/LunarHUE/store#readme>

@@ -133,4 +133,9 @@ declaration-time `delay` and `onPersist`, while `enabled` is runtime-only.
 On web:
 
 - `flushOnPageHide` is implemented via `pagehide`
-- `flushOnBackground` is accepted but currently a documented no-op
+- `flushOnBackground` remains a no-op
+
+On React Native:
+
+- `flushOnBackground` flushes queued persistence work when `AppState` leaves `active`
+- `flushOnPageHide` has no effect

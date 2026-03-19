@@ -1,6 +1,6 @@
-import { afterEach, describe, expect, it, jest } from '@jest/globals'
+import { afterAll, afterEach, describe, expect, it, jest } from '@jest/globals'
 
-import { act, renderAsync } from '@testing-library/react-native'
+import { act, renderAsync, waitFor } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
 import { createStore, type StoreDebugEvent } from '../../../core'
@@ -10,9 +10,56 @@ import { persist } from '../plugin'
 import type { PersistPersistArgs } from '../types'
 import { PersistStoreProvider, usePersistentStore } from '../react'
 
+type MockAppStateStatus = 'active' | 'inactive' | 'background'
+
+const mockAppStateRemove = jest.fn()
+let mockAppStateChangeListener: ((status: MockAppStateStatus) => void) | null =
+  null
+const mockAppState = {
+  currentState: 'active' as MockAppStateStatus,
+  addEventListener: jest.fn(
+    (_eventType: 'change', listener: (status: MockAppStateStatus) => void) => {
+      mockAppStateChangeListener = listener
+      return {
+        remove: mockAppStateRemove,
+      }
+    },
+  ),
+}
+
+jest.mock('react-native', () => {
+  const actual = jest.requireActual('react-native') as {
+    Platform?: { OS?: string }
+  } & object
+
+  return {
+    ...actual,
+    AppState: mockAppState,
+    Platform: {
+      ...actual.Platform,
+      OS: 'ios',
+    },
+  }
+})
+
+const globalRuntime = globalThis as {
+  require?: typeof require
+}
+const originalGlobalRequire = globalRuntime.require
+
+globalRuntime.require = require
+
 describe('persist react bindings (native renderer)', () => {
+  afterAll(() => {
+    globalRuntime.require = originalGlobalRequire
+  })
+
   afterEach(() => {
     jest.useRealTimers()
+    mockAppState.currentState = 'active'
+    mockAppStateChangeListener = null
+    mockAppState.addEventListener.mockClear()
+    mockAppStateRemove.mockClear()
   })
 
   it('composes PersistStoreProvider with a non-DOM renderer', async () => {
@@ -146,9 +193,55 @@ describe('persist react bindings (native renderer)', () => {
     await result.unmountAsync()
   })
 
-  it.todo(
-    'flushes queued work when the app backgrounds via React Native AppState',
-  )
+  it('flushes queued work when the app backgrounds via React Native AppState', async () => {
+    const onPersist = jest.fn(
+      async (_args: PersistPersistArgs<{ count: number }>) => {},
+    )
+    const builder = createStore({ count: 0 }).extend(persist())
+    let runtimeStore!: ReturnType<typeof builder.create>
+
+    const result = await renderAsync(
+      <PersistStoreProvider
+        builder={builder}
+        flushOnBackground
+        persist={{
+          enabled: true,
+          delay: 60_000,
+          onPersist,
+        }}
+      >
+        {({ store }) => {
+          runtimeStore = store
+          return <Text>mounted</Text>
+        }}
+      </PersistStoreProvider>,
+    )
+
+    act(() => {
+      runtimeStore.setState(() => ({ count: 1 }))
+    })
+
+    expect(onPersist).not.toHaveBeenCalled()
+    expect(mockAppState.addEventListener).toHaveBeenCalledTimes(1)
+    expect(mockAppStateChangeListener).not.toBeNull()
+
+    await act(async () => {
+      mockAppStateChangeListener?.('background')
+    })
+
+    await waitFor(() => {
+      expect(onPersist).toHaveBeenCalledTimes(1)
+    })
+
+    expect(onPersist).toHaveBeenCalledWith({
+      previousState: { count: 0 },
+      nextState: { count: 1 },
+    })
+
+    await result.unmountAsync()
+
+    expect(mockAppStateRemove).toHaveBeenCalledTimes(1)
+  })
 
   it('emits debug events through builder-owned native persist providers', async () => {
     const events: StoreDebugEvent<{ count: number }>[] = []
