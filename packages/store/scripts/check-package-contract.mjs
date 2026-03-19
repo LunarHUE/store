@@ -94,10 +94,19 @@ function runTypeScriptCheck(cwd, files, shouldPass) {
     [
       tscPath,
       '--noEmit',
+      '--target',
+      'ES2022',
+      '--lib',
+      'ES2022,DOM',
       '--module',
       'nodenext',
       '--moduleResolution',
       'nodenext',
+      '--jsx',
+      'react-jsx',
+      '--skipLibCheck',
+      '--types',
+      'node',
       ...files,
     ],
     {
@@ -132,7 +141,7 @@ function writeTypeFixtures() {
   const consumerFixturePath = path.join(tempDir, 'consumer.ts')
   writeFileSync(
     consumerFixturePath,
-    `import { createStore, type StoreState } from '@lunarhue/store/core'
+    `import { createStore, type StoreDebugEventName, type StoreDebugLevel, type StoreState } from '@lunarhue/store/core'
 import { actions, createAction, useActions } from '@lunarhue/store/plugins/actions'
 import { PersistStoreProvider, persist, type PersistStoreProviderProps, type PersistedStore, usePersistentStore } from '@lunarhue/store/plugins/persist'
 import { StoreProvider, type StoreProviderProps, useLocalStore, useSelector, useStore, useStoreSelector } from '@lunarhue/store/react'
@@ -149,30 +158,45 @@ const CounterStore = createStore<CounterState>()
 
 type CounterRuntime = ReturnType<typeof CounterStore.create>
 type CounterSnapshot = StoreState<CounterRuntime>
+const debugLevel: StoreDebugLevel = 'trace'
 
 const store: PersistedStore<CounterState, { actions: { increment(): void } }> =
-  CounterStore.create()
+  CounterStore.create(undefined, {
+    debug: {
+      level: debugLevel,
+      console: false,
+      sink(event) {
+        const eventName: StoreDebugEventName = event.event
+        void eventName
+      },
+    },
+  })
 const initializePromise: Promise<void> = store.setInitialState({ count: 0 })
 const snapshot: CounterSnapshot = store.get()
 const status = store.lifecycle.meta.get().status
 const flushPromise: Promise<void> = store.persist.flush()
 const providerInitialStateProps: StoreProviderProps<CounterState> = {
   builder: CounterStore,
+  debug: { console: false },
   initialState: { count: 1 },
 }
 const providerLoadInitialStateProps: StoreProviderProps<CounterState> = {
   builder: CounterStore,
+  debug: { level: 'verbose' },
   loadInitialState: async () => ({ count: 2 }),
 }
 const persistProviderInitialStateProps: PersistStoreProviderProps<CounterState> = {
   builder: CounterStore,
+  debug: { console: false },
   initialState: { count: 3 },
 }
 const persistProviderLoadInitialStateProps: PersistStoreProviderProps<CounterState> = {
   builder: CounterStore,
+  debug: { level: 'verbose' },
   loadInitialState: async () => ({ count: 4 }),
 }
 useLocalStore(CounterStore, {
+  debug: { level: 'trace' },
   loadInitialState: async () => ({ count: 5 }),
 })
 // @ts-expect-error initialState and loadInitialState are mutually exclusive
@@ -186,6 +210,7 @@ store.actions.increment()
 void initializePromise
 void snapshot
 void status
+void debugLevel
 void flushPromise
 void providerInitialStateProps
 void providerLoadInitialStateProps
@@ -215,7 +240,14 @@ type LoggerSurface = {
 }
 
 function logger(label: string): StorePlugin<CounterState, any, LoggerSurface> {
-  return ({ store, onDispose }) => {
+  return ({ store, logger, onDispose }) => {
+    logger.emit({
+      source: 'plugin.logger',
+      event: 'plugin.logger.ready',
+      minimumLevel: 'verbose',
+      detail: { label },
+    })
+
     const subscription = store.subscribe((state) => {
       console.log(label, state.count)
     })

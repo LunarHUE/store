@@ -22,8 +22,17 @@ fresh runtime store instance.
 ### Builder contract
 
 ```ts
+type StoreCreateOptions<TState> = {
+  debug?: StoreDebugOptions<TState>
+}
+
 type StoreBuilder<TState, TPlugins = {}> = {
-  create(initialState?: TState): Store<TState, TPlugins>
+  create(): Store<TState, TPlugins>
+  create(initialState: TState): Store<TState, TPlugins>
+  create(
+    initialState: TState | undefined,
+    options: StoreCreateOptions<TState>,
+  ): Store<TState, TPlugins>
   extend<TNextPlugins>(
     plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
@@ -36,6 +45,8 @@ type StoreBuilder<TState, TPlugins = {}> = {
   immediately.
 - If the builder has no declared default and `.create()` is called without an
   override, the runtime store starts `uninitialized`.
+- Pass `create(undefined, { debug: ... })` to enable opt-in runtime debugging
+  without overriding the builder's default readiness behavior.
 
 ### Runtime store contract
 
@@ -73,6 +84,45 @@ If a runtime store is created without ready state:
 - `store.subscribe(...)` does not notify until real state exists
 - `store.setInitialState(nextState)` may be called once to make the store ready
 
+### Runtime debugging
+
+`StoreCreateOptions<TState>` supports:
+
+- `debug?: StoreDebugOptions<TState>`
+
+`StoreDebugOptions<TState>` supports:
+
+- `level?: 'basic' | 'verbose' | 'trace'`
+- `console?: boolean`
+- `sink?: (event) => void`
+
+Notes:
+
+- debugging is off by default
+- debugging is configured per runtime store instance
+- `basic` and `verbose` are metadata-first
+- `trace` includes `previousState` and `nextState` on stateful events
+- built-in event names autocomplete, but custom event names are allowed
+- `source` is an open string so internal modules and custom plugins can use
+  their own namespaces
+
+Example:
+
+```ts
+const events = []
+const store = CounterStore.create(undefined, {
+  debug: {
+    level: 'trace',
+    console: false,
+    sink(event) {
+      events.push(event)
+    },
+  },
+})
+```
+
+Plugins can emit custom events through `StorePluginContext.logger.emit(...)`.
+
 ## React
 
 ```ts
@@ -104,6 +154,7 @@ Builder mode rules:
 - if the builder has no declared initial state, you must provide either
   `initialState` or `loadInitialState`
 - the `builder` prop must remain stable for the lifetime of the provider
+- builder mode also accepts `debug?: StoreDebugOptions<TState>`
 
 Example:
 
@@ -154,6 +205,7 @@ Options:
 
 - `initialState`: creates a ready local store immediately
 - `loadInitialState`: initializes a local store asynchronously
+- `debug`: enables runtime debugging for the local store instance
 
 Without a declared default or one of those options, the returned local store
 begins `uninitialized`.
@@ -280,6 +332,7 @@ If `serializeState` is configured, `nextState` is the serialized value passed to
 It supports:
 
 - `builder={...}` or `store={...}` ownership modes
+- `debug?: StoreDebugOptions<TState>` in builder-owned mode
 - `persist?: { enabled?, delay?, onPersist? }`
 - `flushOnUnmount?: boolean`
 - `flushOnPageHide?: boolean`
