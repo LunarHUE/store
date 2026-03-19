@@ -86,6 +86,9 @@ export function App() {
 - `actions(...)` attaches typed runtime actions on `store.actions`
 - `persist(...)` attaches `store.persist`, with runtime wiring handled by `PersistStoreProvider`
 
+Action helpers mutate runtime state only through `setState(...)`. Returning a
+next-state object from an action does not update the store by itself.
+
 ## Docs
 
 - Repo README: <https://github.com/LunarHUE/store#readme>

@@ -241,6 +241,10 @@ The builder receives helpers bound to the runtime store instance:
 - `getState()`
 - `setState(updater)`
 
+Action return values are not applied to store state automatically. If an
+action computes `{ ...prev, ... }`, it must still call `setState(...)` to
+commit that next state.
+
 ### `createAction(callback)`
 
 Creates a reusable typed action definition that can be declared outside the

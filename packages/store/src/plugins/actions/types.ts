@@ -32,12 +32,18 @@ export type ActionsBuilderHelpers<TState> = {
   getState: () => TState
   /**
    * Updates the runtime store state.
+   *
+   * Action return values are not applied automatically; call `setState(...)`
+   * whenever an action should commit a state transition.
    */
   setState: (updater: (prev: TState) => TState) => void
 }
 
 /**
  * Callback shape used by {@link createAction}.
+ *
+ * The callback may return a value for the caller, but returning a next-state
+ * object does not mutate store state unless `helpers.setState(...)` is called.
  */
 export type ActionCallback<
   TState,

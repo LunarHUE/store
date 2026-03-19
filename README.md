@@ -225,6 +225,10 @@ Reusable actions are bound to the store helpers when the plugin installs. Inline
 actions still work too, so you can mix both styles in the same `actions(...)`
 object.
 
+Action return values are not applied to store state automatically. Returning
+`{ ...prev, ... }` from an action does not commit anything unless the action
+also calls `setState(...)`.
+
 In React:
 
 ```tsx

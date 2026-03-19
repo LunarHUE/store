@@ -44,6 +44,26 @@ describe('actions plugin', () => {
     expect(store.get()).toBe(previous)
   })
 
+  it('does not mutate state when an inline action returns a next-state object without setState', () => {
+    const initialState = { count: 0 }
+    const builder = createStore(initialState).extend(
+      actions(() => ({
+        returnNextState() {
+          return {
+            count: 1,
+          }
+        },
+      })),
+    )
+
+    const store = builder.create()
+    const result = store.actions.returnNextState()
+
+    expect(result).toEqual({ count: 1 })
+    expect(store.get()).toBe(initialState)
+    expect(store.get()).toEqual({ count: 0 })
+  })
+
   it('binds reusable action definitions created outside the plugin callback', () => {
     type CounterState = { count: number }
 
