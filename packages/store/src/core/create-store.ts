@@ -1,6 +1,10 @@
 
 import { createStoreInstance } from './store-instance'
 import { registerStoreBuilder } from './builder-registry'
+import {
+  createBuilderLoggerMetadata,
+  defineBuilderLoggerMetadata,
+} from './logger'
 
 import type {
   Store,
@@ -29,13 +33,18 @@ export function createStore<TState>(
   const createBuilder = <TPlugins>(
     plugins: PluginList,
   ): StoreBuilder<TState, TPlugins> => {
+    const loggerMetadata = createBuilderLoggerMetadata()
     const builder: StoreBuilder<TState, TPlugins> = {
       create(
         overrideInitialState?: TState,
-        _options?: StoreCreateOptions<TState>,
+        options?: StoreCreateOptions<TState>,
       ) {
         const hasOverrideInitialState = overrideInitialState !== undefined
         const controller = createStoreInstance({
+          builderId: loggerMetadata.builderId,
+          debug: options?.debug,
+          hasDeclaredInitialState,
+          hasOverrideInitialState,
           initialState: hasOverrideInitialState
             ? overrideInitialState
             : initialState,
@@ -62,6 +71,8 @@ export function createStore<TState>(
         return createBuilder<TPlugins & TNextPlugins>([...plugins, plugin])
       },
     }
+
+    defineBuilderLoggerMetadata(builder, loggerMetadata)
 
     return builder
   }
