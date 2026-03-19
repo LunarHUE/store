@@ -25,11 +25,9 @@ There is no root package barrel export.
 ```ts
 import { createStore } from '@lunarhue/store/core'
 
-const CounterStore = createStore({
-  count: 0,
-})
+const CounterStore = createStore<{ count: number }>()
 
-const store = CounterStore.create()
+const store = CounterStore.create({ count: 0 })
 
 store.setState((prev) => ({
   ...prev,
@@ -52,7 +50,7 @@ function CounterValue() {
 
 function App() {
   return (
-    <StoreProvider builder={CounterStore}>
+    <StoreProvider builder={CounterStore} loadInitialState={async () => ({ count: 0 })}>
       <CounterValue />
     </StoreProvider>
   )

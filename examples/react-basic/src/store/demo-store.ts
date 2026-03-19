@@ -15,6 +15,24 @@ export const DEMO_INITIAL_STATE: DemoState = {
   items: [],
 }
 
+export function readDemoStateFromStorage(): DemoState {
+  if (typeof window === 'undefined') {
+    return DEMO_INITIAL_STATE
+  }
+
+  const serialized = window.localStorage.getItem(STORAGE_KEY)
+
+  if (!serialized) {
+    return DEMO_INITIAL_STATE
+  }
+
+  try {
+    return JSON.parse(serialized) as DemoState
+  } catch {
+    return DEMO_INITIAL_STATE
+  }
+}
+
 const increment = createAction<DemoState>(({ setState }) => {
   setState((prev) => ({
     ...prev,
@@ -59,7 +77,7 @@ const removeItem = createAction<DemoState, [index: number]>(
     }))
   },
 )
-export const demoStoreBuilder = createStore<DemoState>(DEMO_INITIAL_STATE)
+export const demoStoreBuilder = createStore<DemoState>()
   .extend(
     actions(() => ({
       increment,
@@ -72,16 +90,6 @@ export const demoStoreBuilder = createStore<DemoState>(DEMO_INITIAL_STATE)
     persist({
       flushOnDispose: true,
       delay: 400,
-      async hydrate({ store }) {
-        const serialized = window.localStorage.getItem(STORAGE_KEY)
-
-        if (!serialized) {
-          await store.hydrate(store.get())
-          return
-        }
-
-        await store.hydrate(JSON.parse(serialized) as DemoState)
-      },
       async onPersist({ nextState }) {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(nextState))
       },

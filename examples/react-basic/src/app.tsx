@@ -5,7 +5,7 @@ import { CounterPanel } from '@/features/counter/counter-panel'
 import { DraftComposer } from '@/features/items/draft-composer'
 import { ItemsList } from '@/features/items/items-list'
 import { PersistMetaPanel } from '@/features/persist/persist-meta-panel'
-import { demoStoreBuilder } from '@/store/demo-store'
+import { demoStoreBuilder, readDemoStateFromStorage } from '@/store/demo-store'
 
 export function App() {
   return (
@@ -14,6 +14,7 @@ export function App() {
       flushOnUnmount
       flushOnPageHide
       flushOnBackground
+      loadInitialState={async () => readDemoStateFromStorage()}
     >
       <main className="min-h-screen bg-background px-4 py-6 text-foreground sm:px-6 sm:py-10">
         <div className="mx-auto grid max-w-6xl gap-6 lg:gap-8">

@@ -6,13 +6,14 @@
 import { createStore } from '@lunarhue/store/core'
 ```
 
-`createStore(initialState)` returns a `StoreBuilder<TState>`.
+`createStore(initialState)` and `createStore<TState>()` return a
+`StoreBuilder<TState>`.
 
 Builder API:
 
 ```ts
 type StoreBuilder<TState, TPlugins = {}> = {
-  create(): Store<TState, TPlugins>
+  create(initialState?: TState): Store<TState, TPlugins>
   extend<TNextPlugins>(
     plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
@@ -25,6 +26,8 @@ Runtime store API:
 `.create()`, plus:
 
 - `dispose(): Promise<void>`
+- `setInitialState(nextState): Promise<void>`
+- `lifecycle.meta`
 - any attached plugin surface in `TPlugins`
 
 Notes:
@@ -70,6 +73,13 @@ Provider usage:
 
 <StoreProvider builder={SubmissionStore}>
   {({ store }) => <></>}
+</StoreProvider>
+
+<StoreProvider
+  builder={SubmissionStore}
+  loadInitialState={async () => serverState}
+>
+  <Child />
 </StoreProvider>
 ```
 
@@ -139,7 +149,7 @@ import {
 Plugin install:
 
 ```ts
-const SubmissionStore = createStore({}).extend(
+const SubmissionStore = createStore<{ body: string }>().extend(
   persist({
     flushOnDispose: true,
     delay: 500,
@@ -164,12 +174,17 @@ const pending = useSelector(store.persist.meta, (meta) => meta.pending)
 ```tsx
 <PersistStoreProvider
   builder={SubmissionStore}
+  loadInitialState={async () => {
+    const serialized = window.localStorage.getItem('submission')
+
+    return serialized ? JSON.parse(serialized) : { body: '' }
+  }}
   persist={{
     key: 'submission',
     enabled: true,
     delay: 500,
-    async hydrate({ store: runtimeStore }) {
-      await runtimeStore.hydrate(initialState)
+    onPersist: async ({ nextState }) => {
+      window.localStorage.setItem('submission', JSON.stringify(nextState))
     },
   }}
 >

@@ -35,6 +35,8 @@ of mutating the original declaration.
 At runtime, a Lunarhue `Store<TState, TPlugins>` is the TanStack store instance plus:
 
 - `dispose(): Promise<void>`
+- `setInitialState(nextState): Promise<void>`
+- `lifecycle.meta`
 - any attached plugin surfaces such as `actions` or `persist`
 
 The runtime store object has stable identity for its lifetime. State changes do
@@ -77,6 +79,11 @@ public API is provider-first now.
 - `store={...}`: provider reuses an externally created runtime store and does not own disposal
 - children may be plain JSX or a render prop receiving `{ store }`
 
+When a builder has no declaration-time state, `StoreProvider` can make it ready
+with `initialState` or `loadInitialState`. Until then, the store stays
+uninitialized and core reads/writes throw loudly instead of pretending empty
+state exists.
+
 `useStore(builder)` is provider-only:
 
 - if a matching provider exists, all `useStore(builder)` calls under that provider receive the same runtime store instance
@@ -96,9 +103,8 @@ The persistence plugin has two layers:
 1. core persistence runtime
 2. React bindings over that runtime
 
-The core plugin owns:
+Core owns store readiness and initialization. The persistence plugin owns:
 
-- hydration
 - debounced persistence
 - flush semantics
 - the persistence meta store
@@ -107,6 +113,10 @@ The React plugin layer owns:
 
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
+
+`PersistStoreProvider` composes the generic `StoreProvider`, so it can forward
+`initialState` and `loadInitialState` while keeping persistence concerns limited to
+write coordination.
 
 On web:
 

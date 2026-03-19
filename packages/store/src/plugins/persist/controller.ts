@@ -3,69 +3,61 @@ import type {
   PersistMeta,
   PersistPluginOptions,
   PersistRuntimeOptions,
-  PersistedStore,
 } from './types'
 import type { Store } from '../../core'
 import { createStoreInstance } from '../../core/store-instance'
 
 const DEFAULT_META: PersistMeta = {
-  isHydrated: false,
   pending: false,
   persisting: false,
   lastPersistedAt: null,
   error: null,
 }
 
-let nextGeneratedPersistKeyId = 0
+type RuntimeOptions<TState> = Required<PersistRuntimeOptions<TState>>
 
-function getInitialMeta<TState>(
-  options?: PersistPluginOptions<TState>,
-): PersistMeta {
-  return {
-    ...DEFAULT_META,
-    isHydrated: options?.hydratedOnCreate ?? false,
-  }
+type Transition<TState> = {
+  previousState: TState
+  nextState: TState
 }
 
-type RuntimeOptions<TState> = Required<
-  Omit<PersistRuntimeOptions<TState>, 'hydrate'>
-> & {
-  hydrate?: PersistRuntimeOptions<TState>['hydrate']
+type ControllerState<TState> = {
+  connected: boolean
+  runtimeOptions: RuntimeOptions<TState> | null
+  subscription: { unsubscribe(): void } | null
+  timer: ReturnType<typeof setTimeout> | null
+  pendingTransition: Transition<TState> | null
+  lastObservedState: TState | undefined
+  flushPromise: Promise<void> | null
 }
 
 export function createPersistController<TState>(
   store: Store<TState>,
   pluginOptions?: PersistPluginOptions<TState>,
 ): PersistController<TState> {
-  const meta = createStoreInstance(getInitialMeta(pluginOptions)).store
-  const fallbackKey = `persist:${++nextGeneratedPersistKeyId}`
-  let runtimeOptions: RuntimeOptions<TState> | null = null
-  let subscription: { unsubscribe(): void } | null = null
-  let timer: ReturnType<typeof setTimeout> | null = null
-  let queuedTransition: {
-    previousState: TState
-    nextState: TState
-  } | null = null
-  let lastObservedState = store.get()
-  let currentKey: string | null = null
-  let currentFlushPromise: Promise<void> | null = null
-  let hydrating = false
-  let isConnected = false
-  let hasRequestedHydrationForKey = false
+  const meta = createStoreInstance({
+    initialState: { ...DEFAULT_META },
+    readyOnCreate: true,
+  }).store
 
-  const resolveKey = (key?: string) => key ?? fallbackKey
+  const state: ControllerState<TState> = {
+    connected: false,
+    runtimeOptions: null,
+    subscription: null,
+    timer: null,
+    pendingTransition: null,
+    lastObservedState:
+      store.lifecycle.meta.get().status === 'ready' ? store.get() : undefined,
+    flushPromise: null,
+  }
 
   const clearTimer = () => {
-    if (!timer) {
+    if (state.timer === null) {
       return
     }
 
-    clearTimeout(timer)
-    timer = null
-  }
-
-  const updateMeta = (updater: (prev: PersistMeta) => PersistMeta) => {
-    meta.setState(updater)
+    clearTimeout(state.timer)
+    state.timer = null
   }
 
   const resolveRuntimeOptions = (
@@ -80,204 +72,170 @@ export function createPersistController<TState>(
     }
 
     return {
-      key: resolveKey(options.key),
-      enabled: options.enabled ?? pluginOptions?.enabled ?? true,
+      enabled: options.enabled ?? true,
       delay: options.delay ?? pluginOptions?.delay ?? 0,
-      hydrate: options.hydrate ?? pluginOptions?.hydrate,
       onPersist,
     }
   }
 
-  const resetForKey = (key: string) => {
-    currentKey = key
-    queuedTransition = null
+  const resetState = () => {
     clearTimer()
-    hasRequestedHydrationForKey = false
-    lastObservedState = store.get()
-    meta.setState(() => getInitialMeta(pluginOptions))
+    state.pendingTransition = null
+    state.lastObservedState =
+      store.lifecycle.meta.get().status === 'ready' ? store.get() : undefined
+
+    meta.setState(() => ({
+      ...DEFAULT_META,
+    }))
   }
 
-  const ensureSubscription = () => {
-    if (subscription) {
-      return
-    }
+  const enqueueTransition = (previousState: TState, nextState: TState) => {
+    state.pendingTransition = state.pendingTransition
+      ? {
+          previousState: state.pendingTransition.previousState,
+          nextState,
+        }
+      : {
+          previousState,
+          nextState,
+        }
 
-    subscription = store.subscribe((nextState) => {
-      const previousState = lastObservedState
-      lastObservedState = nextState
-
-      if (
-        hydrating ||
-        !isConnected ||
-        !runtimeOptions?.enabled ||
-        Object.is(previousState, nextState)
-      ) {
-        return
-      }
-
-      queuedTransition = queuedTransition
-        ? {
-            previousState: queuedTransition.previousState,
-            nextState,
-          }
-        : {
-            previousState,
-            nextState,
-          }
-
-      updateMeta((prev) => ({
-        ...prev,
-        pending: true,
-        error: null,
-      }))
-
-      clearTimer()
-      timer = setTimeout(() => {
-        void flush()
-      }, runtimeOptions.delay)
-    })
+    meta.setState((prev) => ({
+      ...prev,
+      pending: true,
+      error: null,
+    }))
   }
 
-  const maybeHydrate = async (
-    runtimeStore: PersistedStore<TState>,
-    options: RuntimeOptions<TState>,
-  ) => {
-    if (!options.enabled || hasRequestedHydrationForKey) {
+  const canPersist = () => {
+    return state.connected && state.runtimeOptions?.enabled
+  }
+
+  const hasEnabledRuntime = () => {
+    return state.runtimeOptions?.enabled
+  }
+
+  const scheduleFlush = () => {
+    clearTimer()
+
+    const delay = state.runtimeOptions?.delay ?? 0
+    state.timer = setTimeout(() => {
+      void flush()
+    }, delay)
+  }
+
+  const persistTransition = async (transition: Transition<TState>) => {
+    const runtimeOptions = state.runtimeOptions
+
+    if (!runtimeOptions?.enabled) {
       return
     }
 
-    hasRequestedHydrationForKey = true
-
-    if (!options.hydrate) {
-      updateMeta((prev) => ({
-        ...prev,
-        isHydrated: true,
-        error: null,
-      }))
-      return
-    }
+    meta.setState((prev) => ({
+      ...prev,
+      pending: false,
+      persisting: true,
+      error: null,
+    }))
 
     try {
-      await options.hydrate({
-        key: options.key,
-        store: runtimeStore,
+      const nextState = pluginOptions?.serializeState
+        ? pluginOptions.serializeState(transition.nextState)
+        : transition.nextState
+
+      await runtimeOptions.onPersist({
+        previousState: transition.previousState,
+        nextState,
       })
-    } catch (error) {
-      updateMeta((prev) => ({
+
+      meta.setState((prev) => ({
         ...prev,
+        persisting: false,
+        lastPersistedAt: Date.now(),
+        error: null,
+      }))
+    } catch (error) {
+      state.pendingTransition = transition
+
+      meta.setState((prev) => ({
+        ...prev,
+        pending: true,
+        persisting: false,
         error,
       }))
+
       throw error
     }
   }
 
-  const flush = (): Promise<void> => {
-    if (currentFlushPromise) {
-      return currentFlushPromise
-    }
+  const drainQueue = async () => {
+    clearTimer()
 
-    const runFlush = async () => {
-      clearTimer()
-
-      while (queuedTransition) {
-        if (!runtimeOptions?.enabled) {
-          return
-        }
-
-        const transition = queuedTransition
-        queuedTransition = null
-
-        updateMeta((prev) => ({
-          ...prev,
-          pending: false,
-          persisting: true,
-          error: null,
-        }))
-
-        try {
-          const nextState = pluginOptions?.serializeState
-            ? pluginOptions.serializeState(transition.nextState)
-            : transition.nextState
-
-          await runtimeOptions.onPersist({
-            key: resolveKey(runtimeOptions.key),
-            previousState: transition.previousState,
-            nextState,
-          })
-
-          updateMeta((prev) => ({
-            ...prev,
-            persisting: false,
-            lastPersistedAt: Date.now(),
-            error: null,
-          }))
-        } catch (error) {
-          queuedTransition = transition
-          updateMeta((prev) => ({
-            ...prev,
-            pending: true,
-            persisting: false,
-            error,
-          }))
-          throw error
-        }
+    while (state.pendingTransition) {
+      if (!hasEnabledRuntime()) {
+        return
       }
+
+      const transition = state.pendingTransition
+      state.pendingTransition = null
+
+      await persistTransition(transition)
+    }
+  }
+
+  const ensureSubscription = () => {
+    if (state.subscription) {
+      return
     }
 
-    currentFlushPromise = runFlush().finally(() => {
-      currentFlushPromise = null
+    state.subscription = store.subscribe((nextState) => {
+      const previousState = state.lastObservedState
+      state.lastObservedState = nextState
+
+      if (!canPersist()) {
+        return
+      }
+
+      if (previousState === undefined || Object.is(previousState, nextState)) {
+        return
+      }
+
+      enqueueTransition(previousState, nextState)
+      scheduleFlush()
+    })
+  }
+
+  const flush = (): Promise<void> => {
+    if (state.flushPromise) {
+      return state.flushPromise
+    }
+
+    state.flushPromise = drainQueue().finally(() => {
+      state.flushPromise = null
     })
 
-    return currentFlushPromise
+    return state.flushPromise
   }
 
   return {
     meta,
-    connect(runtimeStore, options) {
-      const resolvedOptions = resolveRuntimeOptions(options)
-      runtimeOptions = resolvedOptions
+    connect(_runtimeStore, options) {
+      state.runtimeOptions = resolveRuntimeOptions(options)
 
-      if (currentKey !== resolvedOptions.key) {
-        resetForKey(resolvedOptions.key)
-      }
-
-      isConnected = true
+      resetState()
+      state.connected = true
       ensureSubscription()
-      void maybeHydrate(runtimeStore, resolvedOptions).catch(() => {})
 
       return () => {
-        if (currentKey !== resolvedOptions.key) {
-          return
-        }
-
-        isConnected = false
+        state.connected = false
         clearTimer()
-        updateMeta((prev) => ({
+
+        meta.setState((prev) => ({
           ...prev,
           persisting: false,
         }))
       }
     },
-    flush() {
-      return flush()
-    },
-    async hydrate(nextState) {
-      clearTimer()
-      queuedTransition = null
-      hydrating = true
-
-      try {
-        store.setState(() => nextState)
-        lastObservedState = nextState
-        updateMeta((prev) => ({
-          ...prev,
-          isHydrated: true,
-          pending: false,
-          error: null,
-        }))
-      } finally {
-        hydrating = false
-      }
-    },
+    flush,
   }
 }

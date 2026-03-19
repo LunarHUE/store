@@ -24,15 +24,14 @@ import {
 
 const resetPersistMeta: PersistMeta = {
   error: null,
-  isHydrated: true,
   lastPersistedAt: null,
   pending: false,
   persisting: false,
 }
 
-function HydratedValue() {
+function StoreStatusValue() {
   const { store } = usePersistentStore(demoStoreBuilder)
-  const value = useSelector(store.persist.meta, (meta) => meta.isHydrated)
+  const value = store.lifecycle.meta.get().status
 
   return <span>{String(value)}</span>
 }
@@ -87,7 +86,7 @@ function ResetButton() {
 
   const resetDemo = async (): Promise<void> => {
     window.localStorage.removeItem(STORAGE_KEY)
-    await store.hydrate(DEMO_INITIAL_STATE)
+    store.setState(() => DEMO_INITIAL_STATE)
     store.persist.meta.setState(() => resetPersistMeta)
   }
 
@@ -112,18 +111,19 @@ export function PersistMetaPanel() {
             Persistence
           </Badge>
           <CardTitle>
-            Meta fields can each subscribe to the persist store directly.
+            Core readiness and persist metadata can be observed separately.
           </CardTitle>
           <CardDescription className="max-w-xl">
-            Reset and flush stay as dedicated controls, while each displayed
-            value reads only the persist field it renders.
+            Reset and flush stay as dedicated controls, while the status rows
+            read from either the core lifecycle meta store or the persist meta
+            store as needed.
           </CardDescription>
         </div>
       </CardHeader>
 
       <CardContent className="grid gap-5">
         <dl className="grid">
-          <MetaRow label="Hydrated" value={<HydratedValue />} />
+          <MetaRow label="Store status" value={<StoreStatusValue />} />
           <Separator />
           <MetaRow label="Pending" value={<PendingValue />} />
           <Separator />

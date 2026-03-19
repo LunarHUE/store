@@ -4,9 +4,12 @@ import { registerStoreBuilder } from './builder-registry'
 
 import type { Store, StoreBuilder, StorePlugin } from './types'
 
+export function createStore<TState>(): StoreBuilder<TState>
+export function createStore<TState>(initialState: TState): StoreBuilder<TState>
 export function createStore<TState>(
-  initialState: TState,
+  initialState?: TState,
 ): StoreBuilder<TState> {
+  const hasDeclaredInitialState = arguments.length > 0
   type PluginList = ReadonlyArray<StorePlugin<TState, any, any>>
 
   const createBuilder = <TPlugins>(
@@ -14,7 +17,13 @@ export function createStore<TState>(
   ): StoreBuilder<TState, TPlugins> => {
     const builder: StoreBuilder<TState, TPlugins> = {
       create(overrideInitialState?: TState) {
-        const controller = createStoreInstance(overrideInitialState ?? initialState)
+        const hasOverrideInitialState = arguments.length > 0
+        const controller = createStoreInstance({
+          initialState: hasOverrideInitialState
+            ? overrideInitialState
+            : initialState,
+          readyOnCreate: hasOverrideInitialState || hasDeclaredInitialState,
+        })
 
         for (const plugin of plugins) {
           const surface = plugin({

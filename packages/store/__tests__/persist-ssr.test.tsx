@@ -26,7 +26,6 @@ describe('PersistStoreProvider — initialState wiring', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-initial-state',
           onPersist: async () => {},
         }}
       >
@@ -49,7 +48,6 @@ describe('PersistStoreProvider — initialState wiring', () => {
       <PersistStoreProvider
         builder={builder}
         persist={{
-          key: 'test-fallback',
           onPersist: async () => {},
         }}
       >
@@ -58,6 +56,34 @@ describe('PersistStoreProvider — initialState wiring', () => {
     )
 
     expect(screen.getByText('0')).toBeTruthy()
+  })
+
+  it('loads initial state through the provider when the builder has no default state', async () => {
+    const builder = createStore<{ count: number }>().extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+
+    function Probe() {
+      const count = useStoreSelector(builder, (state) => state.count)
+      return <div>{count}</div>
+    }
+
+    render(
+      <PersistStoreProvider
+        builder={builder}
+        loadInitialState={async ({ store }) => {
+          expect(store.lifecycle.meta.get().status).toBe('initializing')
+          return { count: 42 }
+        }}
+        persist={{}}
+      >
+        <Probe />
+      </PersistStoreProvider>,
+    )
+
+    expect(await screen.findByText('42')).toBeTruthy()
   })
 })
 
@@ -80,7 +106,6 @@ describe('PersistStoreProvider — SSR', () => {
           builder={builder}
           initialState={{ count: 42 }}
           persist={{
-            key: 'test-ssr-browser',
             onPersist: async () => {},
           }}
         >
@@ -88,6 +113,27 @@ describe('PersistStoreProvider — SSR', () => {
         </PersistStoreProvider>,
       ),
     ).not.toThrow()
+  })
+
+  it('does not run loadInitialState during server render when initialState is omitted', () => {
+    const builder = createStore<{ count: number }>().extend(
+      persist({
+        onPersist: async () => {},
+      }),
+    )
+    const loadInitialState = vi.fn(async () => ({ count: 1 }))
+
+    renderToString(
+      <PersistStoreProvider
+        builder={builder}
+        loadInitialState={loadInitialState}
+        persist={{}}
+      >
+        <div>probe</div>
+      </PersistStoreProvider>,
+    )
+
+    expect(loadInitialState).not.toHaveBeenCalled()
   })
 
   it('renders initialState into the server HTML string', () => {
@@ -103,7 +149,6 @@ describe('PersistStoreProvider — SSR', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-ssr-html',
           onPersist: async () => {},
         }}
       >
@@ -127,7 +172,6 @@ describe('PersistStoreProvider — SSR', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-ssr-hydrate',
           onPersist: async () => {},
         }}
       >
@@ -147,7 +191,6 @@ describe('PersistStoreProvider — SSR', () => {
           builder={builder}
           initialState={{ count: 42 }}
           persist={{
-            key: 'test-ssr-hydrate',
             onPersist: async () => {},
           }}
         >

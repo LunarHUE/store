@@ -1,22 +1,17 @@
 'use client'
 
-import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
+import {
+  PersistStoreProvider,
+  usePersistentStore,
+} from '@lunarhue/store/plugins/persist'
 
+import { getPlannerStateFromClientCookies } from '@/lib/cookies'
 import { PlannerStore, type PlannerState } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
 import { NotesPanel } from './notes-panel'
 import { PersistencePanel } from './persistence-panel'
 import { SummaryPanel } from './summary-panel'
-
-// Server Component usage:
-//   const data = await fetchPlannerData()  // fetch from DB, cache, etc.
-//   return <PlannerDemo initialState={data} />
-//
-// `initialState` seeds the store before the first render.
-// The persist plugin's `hydrate` callback (if configured) will run
-// after mount and can override this value if needed.
-
 type PlannerDemoProps = {
   initialState?: PlannerState
 }

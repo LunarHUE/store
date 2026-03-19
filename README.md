@@ -29,7 +29,7 @@ There is no root package barrel export in the current package shape.
 
 ## Core store usage
 
-`createStore(...)` returns a reusable `StoreBuilder`, not a live store
+`createStore(...)` and `createStore<TState>()` return a reusable `StoreBuilder`, not a live store
 instance.
 
 ```ts
@@ -48,6 +48,17 @@ store.setState((prev) => ({
 }))
 
 await store.dispose()
+```
+
+You can also declare a builder without a default state and set its initial state later:
+
+```ts
+type DraftState = { body: string }
+
+const DraftStore = createStore<DraftState>()
+
+const draftStore = DraftStore.create()
+await draftStore.setInitialState({ body: '' })
 ```
 
 Why the builder exists:
@@ -109,6 +120,24 @@ function App() {
 ```
 
 `useStore(builder)` is provider-only. If no matching provider exists, it throws.
+
+If a builder has no declaration-time state, `StoreProvider` can make it ready
+with either `initialState` or `loadInitialState`:
+
+```tsx
+const CounterStore = createStore<{ count: number }>()
+
+function App() {
+  return (
+    <StoreProvider
+      builder={CounterStore}
+      loadInitialState={async () => ({ count: 0 })}
+    >
+      <CounterValue />
+    </StoreProvider>
+  )
+}
+```
 
 Use `useLocalStore(builder)` when you want explicit local ownership:
 
@@ -188,11 +217,14 @@ function IncrementButton() {
 
 ## Persist plugin
 
+The core store adds:
+
+- `store.setInitialState(...)`
+- `store.lifecycle.meta`
+
 The persist plugin adds:
 
-- `store.hydrate(...)`
 - `store.persist.flush()`
-- `store.persist.hydrate(...)`
 - `store.persist.meta`
 - `PersistStoreProvider`
 - `usePersistentStore(builder)`
@@ -203,9 +235,7 @@ Store declaration:
 import { createStore } from '@lunarhue/store/core'
 import { persist } from '@lunarhue/store/plugins/persist'
 
-const DraftStore = createStore({
-  body: '',
-}).extend(
+const DraftStore = createStore<{ body: string }>().extend(
   persist({
     flushOnDispose: true,
     delay: 500,
@@ -230,11 +260,12 @@ import { useSelector } from '@lunarhue/store/react'
 
 function DraftScreen() {
   const { flush, store } = usePersistentStore(DraftStore)
+  const status = store.lifecycle.meta.get().status
   const persistMeta = useSelector(store.persist.meta, (meta) => meta)
 
   return (
       <div>
-        <span>Hydrated: {String(persistMeta.isHydrated)}</span>
+        <span>Status: {status}</span>
         <span>Pending: {String(persistMeta.pending)}</span>
         <button onClick={() => void flush()}>Flush</button>
       </div>
@@ -247,18 +278,16 @@ function App() {
       builder={DraftStore}
       flushOnUnmount
       flushOnPageHide
+      loadInitialState={async () => {
+        const serialized = window.localStorage.getItem('draft')
+
+        return serialized ? JSON.parse(serialized) : { body: '' }
+      }}
       persist={{
         key: 'draft',
         enabled: true,
-        async hydrate({ store: runtimeStore }) {
-          const serialized = window.localStorage.getItem('draft')
-
-          if (!serialized) {
-            await runtimeStore.hydrate(runtimeStore.get())
-            return
-          }
-
-          await runtimeStore.hydrate(JSON.parse(serialized))
+        onPersist: async ({ nextState }) => {
+          window.localStorage.setItem('draft', JSON.stringify(nextState))
         },
       }}
     >

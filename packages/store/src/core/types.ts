@@ -1,16 +1,47 @@
-import type { Store as BaseStore } from '@tanstack/store'
+import type { Readable, Store as BaseStore } from '@tanstack/store'
 
 export type StoreCleanup = () => void | Promise<void>
 
-export type Store<TState, TPlugins = {}> = BaseStore<TState> & {
-  dispose(): Promise<void>
-} & TPlugins
+export type ReadableStore<TState> = Pick<
+  Readable<TState>,
+  'get' | 'subscribe'
+> & {
+  readonly state: TState
+}
+
+export type StoreLifecycleStatus =
+  | 'uninitialized'
+  | 'initializing'
+  | 'ready'
+  | 'error'
+
+export type StoreLifecycleMeta = {
+  status: StoreLifecycleStatus
+  error: unknown | null
+}
+
+export type StoreInitialStateLoader<TState, TPlugins = {}> = (args: {
+  store: Store<TState, TPlugins>
+}) => Promise<TState> | TState
+
+export type StoreLifecycleSurface<TState> = {
+  setInitialState(nextState: TState): Promise<void>
+  lifecycle: {
+    meta: ReadableStore<StoreLifecycleMeta>
+  }
+}
+
+export type Store<TState, TPlugins = {}> = BaseStore<TState> &
+  StoreLifecycleSurface<TState> & {
+    dispose(): Promise<void>
+  } & TPlugins
 
 export type StoreState<TStore extends Store<any, any>> = TStore extends {
   get: () => infer TState
 }
   ? TState
   : never
+
 export type StorePluginContext<TState, TPlugins> = {
   store: Store<TState, TPlugins>
   onDispose(cleanup: StoreCleanup): void
