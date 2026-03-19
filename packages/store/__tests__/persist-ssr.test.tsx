@@ -26,7 +26,6 @@ describe('PersistStoreProvider — initialState wiring', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-initial-state',
           onPersist: async () => {},
         }}
       >
@@ -49,7 +48,6 @@ describe('PersistStoreProvider — initialState wiring', () => {
       <PersistStoreProvider
         builder={builder}
         persist={{
-          key: 'test-fallback',
           onPersist: async () => {},
         }}
       >
@@ -79,9 +77,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
           expect(store.lifecycle.meta.get().status).toBe('initializing')
           return { count: 42 }
         }}
-        persist={{
-          key: 'test-provider-load-initial-state',
-        }}
+        persist={{}}
       >
         <Probe />
       </PersistStoreProvider>,
@@ -110,7 +106,6 @@ describe('PersistStoreProvider — SSR', () => {
           builder={builder}
           initialState={{ count: 42 }}
           persist={{
-            key: 'test-ssr-browser',
             onPersist: async () => {},
           }}
         >
@@ -132,9 +127,7 @@ describe('PersistStoreProvider — SSR', () => {
       <PersistStoreProvider
         builder={builder}
         loadInitialState={loadInitialState}
-        persist={{
-          key: 'test-ssr-load-initial-state',
-        }}
+        persist={{}}
       >
         <div>probe</div>
       </PersistStoreProvider>,
@@ -156,7 +149,6 @@ describe('PersistStoreProvider — SSR', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-ssr-html',
           onPersist: async () => {},
         }}
       >
@@ -180,7 +172,6 @@ describe('PersistStoreProvider — SSR', () => {
         builder={builder}
         initialState={{ count: 42 }}
         persist={{
-          key: 'test-ssr-hydrate',
           onPersist: async () => {},
         }}
       >
@@ -200,7 +191,6 @@ describe('PersistStoreProvider — SSR', () => {
           builder={builder}
           initialState={{ count: 42 }}
           persist={{
-            key: 'test-ssr-hydrate',
             onPersist: async () => {},
           }}
         >
