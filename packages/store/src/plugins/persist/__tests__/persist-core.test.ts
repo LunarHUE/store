@@ -42,7 +42,6 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
     const disconnect = getPersistController(store).connect(store, {
-      key: 'demo',
       delay: 50,
       onPersist,
       enabled: true,
@@ -55,7 +54,6 @@ describe('persist core', () => {
 
     expect(onPersist).toHaveBeenCalledTimes(1)
     expect(onPersist).toHaveBeenCalledWith({
-      key: 'demo',
       previousState: { count: 0 },
       nextState: { count: 2 },
     })
@@ -77,7 +75,6 @@ describe('persist core', () => {
     const store = builder.create()
 
     getPersistController(store).connect(store, {
-      key: 'flush',
       onPersist,
       enabled: true,
     })
@@ -104,7 +101,6 @@ describe('persist core', () => {
     const store = builder.create()
 
     getPersistController(store).connect(store, {
-      key: 'dispose',
       onPersist,
       enabled: true,
     })
@@ -115,13 +111,34 @@ describe('persist core', () => {
     expect(onPersist).toHaveBeenCalledTimes(1)
   })
 
+  it('flushes queued work after the runtime disconnects', async () => {
+    const onPersist = vi.fn(async () => {})
+    const builder = createStore({ count: 0 }).extend(persist())
+    const store = builder.create()
+    const disconnect = getPersistController(store).connect(store, {
+      onPersist,
+      enabled: true,
+      delay: 1000,
+    })
+
+    store.setState(() => ({ count: 1 }))
+    disconnect()
+
+    await store.persist.flush()
+
+    expect(onPersist).toHaveBeenCalledTimes(1)
+    expect(onPersist).toHaveBeenCalledWith({
+      previousState: { count: 0 },
+      nextState: { count: 1 },
+    })
+  })
+
   it('captures persistence errors in meta state', async () => {
     const failure = new Error('persist failed')
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
     getPersistController(store).connect(store, {
-      key: 'errors',
       onPersist: async () => {
         throw failure
       },
@@ -144,16 +161,13 @@ describe('persist core', () => {
     )
     const store = builder.create()
 
-    getPersistController(store).connect(store, {
-      key: 'declared-persist',
-    })
+    getPersistController(store).connect(store, {})
 
     store.setState(() => ({ count: 1 }))
     await store.persist.flush()
 
     expect(onPersist).toHaveBeenCalledTimes(1)
     expect(onPersist).toHaveBeenCalledWith({
-      key: 'declared-persist',
       previousState: { count: 0 },
       nextState: { count: 1 },
     })
@@ -170,7 +184,6 @@ describe('persist core', () => {
     const store = builder.create()
 
     getPersistController(store).connect(store, {
-      key: 'override-persist',
       onPersist: runtimeOnPersist,
     })
 
@@ -194,7 +207,7 @@ describe('persist core', () => {
     const store = builder.create()
 
     getPersistController(store).connect(store, {
-      key: 'declared-delay',
+      onPersist,
     })
 
     store.setState(() => ({ count: 1 }))
@@ -210,11 +223,9 @@ describe('persist core', () => {
     const builder = createStore({ count: 0 }).extend(persist())
     const store = builder.create()
 
-    expect(() =>
-      getPersistController(store).connect(store, {
-        key: 'missing-persist',
-      }),
-    ).toThrow(/requires onPersist/)
+    expect(() => getPersistController(store).connect(store, {})).toThrow(
+      /requires onPersist/,
+    )
   })
 
   it('generates a stable fallback key when one is not provided', async () => {
@@ -243,11 +254,5 @@ describe('persist core', () => {
     await store.persist.flush()
 
     expect(onPersist).toHaveBeenCalledTimes(2)
-
-    const firstKey = onPersist.mock.calls[0]?.[0]?.key
-    const secondKey = onPersist.mock.calls[1]?.[0]?.key
-
-    expect(firstKey).toBeTypeOf('string')
-    expect(firstKey).toBe(secondKey)
   })
 })

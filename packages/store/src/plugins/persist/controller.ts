@@ -111,6 +111,10 @@ export function createPersistController<TState>(
     return state.connected && state.runtimeOptions?.enabled
   }
 
+  const hasEnabledRuntime = () => {
+    return state.runtimeOptions?.enabled
+  }
+
   const scheduleFlush = () => {
     clearTimer()
 
@@ -168,7 +172,7 @@ export function createPersistController<TState>(
     clearTimer()
 
     while (state.pendingTransition) {
-      if (!canPersist()) {
+      if (!hasEnabledRuntime()) {
         return
       }
 

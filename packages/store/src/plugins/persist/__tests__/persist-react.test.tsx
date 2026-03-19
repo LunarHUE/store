@@ -40,9 +40,7 @@ describe('persist react bindings', () => {
           expect(store.lifecycle.meta.get().status).toBe('initializing')
           return { count: 4 }
         }}
-        persist={{
-          key: 'provider-builder',
-        }}
+        persist={{}}
       >
         <Probe />
       </PersistStoreProvider>,
@@ -66,11 +64,13 @@ describe('persist react bindings', () => {
       const persistMeta = useSelector(store.persist.meta, (meta) => meta)
       const count = useSelector(store, (state) => state.count)
 
-      return <span>{`${persistMeta.pending ? 'pending' : 'idle'}:${count}`}</span>
+      return (
+        <span>{`${persistMeta.pending ? 'pending' : 'idle'}:${count}`}</span>
+      )
     }
 
     render(
-      <PersistStoreProvider store={store} persist={{ key: 'provider-store' }}>
+      <PersistStoreProvider store={store} persist={{}}>
         <Probe />
       </PersistStoreProvider>,
     )
@@ -88,7 +88,6 @@ describe('persist react bindings', () => {
         builder={builder}
         flushOnUnmount
         persist={{
-          key: 'provider-unmount',
           enabled: true,
           delay: 1000,
           onPersist,
@@ -122,7 +121,6 @@ describe('persist react bindings', () => {
         builder={builder}
         flushOnPageHide
         persist={{
-          key: 'provider-pagehide',
           enabled: true,
           delay: 1000,
           onPersist,
@@ -168,7 +166,6 @@ describe('persist react bindings', () => {
       <PersistStoreProvider
         store={store}
         persist={{
-          key: 'demo',
           onPersist: async () => {},
         }}
       >
@@ -196,10 +193,7 @@ describe('persist react bindings', () => {
     }
 
     render(
-      <PersistStoreProvider
-        store={store}
-        persist={{ key: 'declared-defaults' }}
-      >
+      <PersistStoreProvider store={store} persist={{}}>
         <Probe />
       </PersistStoreProvider>,
     )
@@ -238,7 +232,6 @@ describe('persist react bindings', () => {
       <PersistStoreProvider
         store={store}
         persist={{
-          key: 'runtime-overrides',
           onPersist: runtimeOnPersist,
         }}
       >
@@ -265,7 +258,6 @@ describe('persist react bindings', () => {
         builder={builder}
         flushOnBackground
         persist={{
-          key: 'background-noop',
           onPersist: async () => {},
         }}
       >
@@ -304,10 +296,6 @@ describe('persist react bindings', () => {
     await waitFor(() => {
       expect(onPersist).toHaveBeenCalledTimes(1)
     })
-
-    const persistKey = onPersist.mock.calls[0]?.[0]?.key
-
-    expect(persistKey).toBeTypeOf('string')
   })
 
   it('fails loudly when usePersistentStore is used outside PersistStoreProvider', () => {

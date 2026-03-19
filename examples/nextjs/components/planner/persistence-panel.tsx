@@ -105,18 +105,23 @@ function FlushNowButton() {
     store.persist.meta,
     (meta) => meta.persisting,
   )
-
+  const isPending = useSelector(store.persist.meta, (meta) => meta.pending)
   return (
     <Button
       variant="outline"
       size="sm"
-      disabled={isPersisting}
+      disabled={!isPending || isPersisting}
       onClick={() => {
         void flush()
       }}
     >
       <Save className="size-3.5" />
-      Save
+
+      {!isPending && !isPersisting
+        ? 'Saved'
+        : isPersisting
+          ? 'Saving...'
+          : 'Save'}
     </Button>
   )
 }
