@@ -7,5 +7,6 @@ export default defineConfig({
       '__tests__/**/*.test.ts?(x)',
       'src/plugins/**/__tests__/*.test.ts?(x)',
     ],
+    exclude: ['**/*.native.test.ts?(x)'],
   },
 })

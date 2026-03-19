@@ -65,7 +65,7 @@ export function createStoreInstance<TState>({
   const lifecycle = {
     meta: lifecycleMeta as ReadableStore<StoreLifecycleMeta>,
   }
-  const subscribe = ((
+  const subscribe = (
     observerOrFn: Observer<TState> | ((value: TState) => void),
     error?: (error: any) => void,
     complete?: () => void,
@@ -79,14 +79,22 @@ export function createStoreInstance<TState>({
           }
         : observerOrFn
 
-    return nativeSubscribe((value) => {
-      if (value === UNINITIALIZED) {
-        return
-      }
+    return nativeSubscribe({
+      next(value) {
+        if (value === UNINITIALIZED) {
+          return
+        }
 
-      observer.next?.(value)
+        observer.next?.(value)
+      },
+      error(err) {
+        observer.error?.(err)
+      },
+      complete() {
+        observer.complete?.()
+      },
     })
-  }) as BaseStore<TState>['subscribe']
+  }
 
   Object.defineProperty(instance, 'dispose', {
     configurable: true,

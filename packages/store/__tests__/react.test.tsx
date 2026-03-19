@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -145,7 +147,7 @@ describe('react bindings', () => {
     const ownedCleanupSpy = vi.fn()
     const externalCleanupSpy = vi.fn()
     const createCleanupPlugin = (
-      cleanupSpy: ReturnType<typeof vi.fn>,
+      cleanupSpy: () => void,
     ): StorePlugin<{ count: number }, any, {}> => {
       return ({ onDispose }) => {
         onDispose(() => {
