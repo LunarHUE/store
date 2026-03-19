@@ -20,13 +20,38 @@ import {
   type PersistedStore,
 } from './types'
 
+/**
+ * Value returned by {@link usePersistentStore} and the
+ * `PersistStoreProvider` render prop.
+ */
 export type PersistentStoreResult<TState, TPlugins = {}> = {
+  /**
+   * Persist-enabled runtime store instance.
+   */
   store: PersistedStore<TState, TPlugins>
+  /**
+   * Flushes any queued persistence work immediately.
+   */
   flush(): Promise<void>
 }
+
+/**
+ * Additional flush triggers supported by {@link PersistStoreProvider}.
+ */
 export type PersistenceBoundaryOptions = {
+  /**
+   * Reserved for non-web background lifecycle support.
+   *
+   * On web this is currently a no-op.
+   */
   flushOnBackground?: boolean
+  /**
+   * Flushes pending persistence work when the browser fires `pagehide`.
+   */
   flushOnPageHide?: boolean
+  /**
+   * Flushes pending persistence work when the provider unmounts.
+   */
   flushOnUnmount?: boolean
 }
 type PersistStoreContext<TState, TPlugins> = Context<
@@ -84,6 +109,15 @@ type ExternalPersistStoreProviderProps<TState, TPlugins> = {
   store: PersistedStore<TState, TPlugins>
 } & PersistenceBoundaryOptions
 
+/**
+ * Props for {@link PersistStoreProvider}.
+ *
+ * Use either `builder` to let the provider create and own the persisted store,
+ * or `store` to provide an already-created persisted store. Runtime `persist`
+ * options override declaration-time defaults from {@link persist}. Builder
+ * usage follows the same initialization rules as {@link StoreProvider}, with
+ * optional flush boundaries layered on top.
+ */
 export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | BuilderPersistStoreProviderProps<TState, TPlugins>
   | ExternalPersistStoreProviderProps<TState, TPlugins>
@@ -131,6 +165,11 @@ function usePersistentRuntime<TState, TPlugins = {}>(
   }
 }
 
+/**
+ * Returns the persistent store context for a builder.
+ *
+ * This hook requires a matching {@link PersistStoreProvider} ancestor.
+ */
 export function usePersistentStore<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
 ): PersistentStoreResult<TState, TPlugins> {
@@ -221,6 +260,14 @@ function PersistStoreProviderContent<TState, TPlugins>({
   return <Context.Provider value={persistentStore}>{content}</Context.Provider>
 }
 
+/**
+ * Provides a persisted runtime store to React descendants.
+ *
+ * This composes the core {@link StoreProvider} and connects persistence
+ * runtime options such as `enabled`, `delay`, and `onPersist` for the mounted
+ * boundary. On web, `flushOnBackground` is currently accepted but does not
+ * perform any additional work.
+ */
 export function PersistStoreProvider<TState, TPlugins = {}>(
   props: PersistStoreProviderProps<TState, TPlugins>,
 ) {

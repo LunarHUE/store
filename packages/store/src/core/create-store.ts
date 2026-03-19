@@ -4,6 +4,15 @@ import { registerStoreBuilder } from './builder-registry'
 
 import type { Store, StoreBuilder, StorePlugin } from './types'
 
+/**
+ * Declares a reusable store builder.
+ *
+ * The returned builder is immutable: each call to {@link StoreBuilder.extend}
+ * returns a new builder, and each call to {@link StoreBuilder.create} returns a
+ * fresh runtime store instance. If neither a declaration-time default nor a
+ * create-time override is provided, the runtime store starts uninitialized and
+ * must receive {@link Store.setInitialState} before reads or writes are valid.
+ */
 export function createStore<TState>(): StoreBuilder<TState>
 export function createStore<TState>(initialState: TState): StoreBuilder<TState>
 export function createStore<TState>(

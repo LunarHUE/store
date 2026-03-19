@@ -25,6 +25,14 @@ type LocalStoreOptions<TState, TPlugins> =
   | LocalStoreWithInitialStateOptions<TState>
   | LocalStoreWithLoadInitialStateOptions<TState, TPlugins>
 
+/**
+ * Creates and owns a local runtime store for the current hook call site.
+ *
+ * The returned store is disposed on unmount. Pass `initialState` to start the
+ * local store ready immediately, or `loadInitialState` to initialize a builder
+ * that was declared without a default value. Without a declared default or one
+ * of those options, the returned runtime store begins uninitialized.
+ */
 export function useLocalStore<TState, TPlugins>(
   builder: StoreBuilder<TState, TPlugins>,
   options?: LocalStoreOptions<TState, TPlugins>,
