@@ -37,11 +37,12 @@ export type StoreDebugEventName =
   | 'persist.flush.completed'
   | 'persist.flush.failed'
   | 'persist.boundary.flush'
+  | (string & {})
 
 export type StoreDebugEvent<TState> = {
   timestamp: number
   sequence: number
-  source: 'core' | 'react' | 'persist'
+  source: string
   event: StoreDebugEventName
   level: StoreDebugLevel
   builderId: string

@@ -7,8 +7,8 @@ import type {
   StoreLifecycleMeta,
 } from './types'
 
-const builderDebugMetadataKey = Symbol('lunarhue.store.debug.builder')
-const storeDebugMetadataKey = Symbol('lunarhue.store.debug.store')
+const builderLoggerMetadataKey = Symbol('lunarhue.store.logger.builder')
+const storeLoggerMetadataKey = Symbol('lunarhue.store.logger.store')
 
 const debugLevelRank: Record<StoreDebugLevel, number> = {
   basic: 0,
@@ -27,11 +27,11 @@ type ResolvedStoreDebugOptions<TState> = {
   sink?: ((event: StoreDebugEvent<TState>) => void) | undefined
 }
 
-export type StoreBuilderDebugMetadata = {
+export type StoreBuilderLoggerMetadata = {
   builderId: string
 }
 
-export type StoreDebugMetadata<TState> = {
+export type StoreLoggerMetadata<TState> = {
   builderId: string
   storeId: string
   sequence: number
@@ -43,17 +43,17 @@ type WritableReadableStore<TState> = {
   setState(updater: (prev: TState) => TState): void
 }
 
-export function createBuilderDebugMetadata(): StoreBuilderDebugMetadata {
+export function createBuilderLoggerMetadata(): StoreBuilderLoggerMetadata {
   return {
     builderId: `b${nextBuilderId++}`,
   }
 }
 
-export function defineBuilderDebugMetadata<TBuilder extends object>(
+export function defineBuilderLoggerMetadata<TBuilder extends object>(
   builder: TBuilder,
-  metadata: StoreBuilderDebugMetadata,
+  metadata: StoreBuilderLoggerMetadata,
 ): void {
-  Object.defineProperty(builder, builderDebugMetadataKey, {
+  Object.defineProperty(builder, builderLoggerMetadataKey, {
     configurable: false,
     enumerable: false,
     value: metadata,
@@ -61,20 +61,20 @@ export function defineBuilderDebugMetadata<TBuilder extends object>(
   })
 }
 
-export function getBuilderDebugMetadata<TBuilder extends object>(
+export function getBuilderLoggerMetadata<TBuilder extends object>(
   builder: TBuilder,
-): StoreBuilderDebugMetadata | undefined {
+): StoreBuilderLoggerMetadata | undefined {
   return (
     builder as TBuilder & {
-      [builderDebugMetadataKey]?: StoreBuilderDebugMetadata
+      [builderLoggerMetadataKey]?: StoreBuilderLoggerMetadata
     }
-  )[builderDebugMetadataKey]
+  )[builderLoggerMetadataKey]
 }
 
-export function createStoreDebugMetadata<TState>(args: {
+export function createStoreLoggerMetadata<TState>(args: {
   builderId: string
   debug?: StoreDebugOptions<TState>
-}): StoreDebugMetadata<TState> {
+}): StoreLoggerMetadata<TState> {
   return {
     builderId: args.builderId,
     storeId: `s${nextStoreId++}`,
@@ -83,11 +83,11 @@ export function createStoreDebugMetadata<TState>(args: {
   }
 }
 
-export function defineStoreDebugMetadata<TState>(
+export function defineStoreLoggerMetadata<TState>(
   store: Store<TState, any>,
-  metadata: StoreDebugMetadata<TState>,
+  metadata: StoreLoggerMetadata<TState>,
 ): void {
-  Object.defineProperty(store, storeDebugMetadataKey, {
+  Object.defineProperty(store, storeLoggerMetadataKey, {
     configurable: false,
     enumerable: false,
     value: metadata,
@@ -95,17 +95,17 @@ export function defineStoreDebugMetadata<TState>(
   })
 }
 
-export function getStoreDebugMetadata<TState>(
+export function getStoreLoggerMetadata<TState>(
   store: Store<TState, any>,
-): StoreDebugMetadata<TState> | undefined {
+): StoreLoggerMetadata<TState> | undefined {
   return (
     store as Store<TState, any> & {
-      [storeDebugMetadataKey]?: StoreDebugMetadata<TState>
+      [storeLoggerMetadataKey]?: StoreLoggerMetadata<TState>
     }
-  )[storeDebugMetadataKey]
+  )[storeLoggerMetadataKey]
 }
 
-export function createSubscriptionDebugId(): string {
+export function createSubscriptionLoggerId(): string {
   return `sub${nextSubscriptionId++}`
 }
 
@@ -120,7 +120,7 @@ export function emitStoreDebugEvent<TState>(
   store: Store<TState, any>,
   args: {
     event: StoreDebugEventName
-    source: StoreDebugEvent<TState>['source']
+    source: string
     minimumLevel?: StoreDebugLevel
     status?: StoreLifecycleMeta['status']
     subscriptionId?: string
@@ -130,7 +130,7 @@ export function emitStoreDebugEvent<TState>(
     error?: unknown
   },
 ): StoreDebugEvent<TState> | null {
-  const metadata = getStoreDebugMetadata(store)
+  const metadata = getStoreLoggerMetadata(store)
 
   if (!metadata?.options.enabled) {
     return null
@@ -198,7 +198,7 @@ export function transitionStoreLifecycle<TState>(
   lifecycleMeta: WritableReadableStore<StoreLifecycleMeta>,
   nextState: StoreLifecycleMeta,
   args?: {
-    source?: StoreDebugEvent<TState>['source']
+    source?: string
     minimumLevel?: StoreDebugLevel
     detail?: Record<string, unknown>
   },
