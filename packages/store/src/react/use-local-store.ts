@@ -1,27 +1,31 @@
-import { useEffect, useEffectEvent, useRef } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 
+import { emitStoreDebugEvent, transitionStoreLifecycle } from '../core/logger'
 import type { Store, StoreBuilder, StoreInitialStateLoader } from '../core'
+import type { StoreDebugOptions, StoreLifecycleMeta } from '../core'
 
-type LocalStoreOptionsBase = {}
+type LocalStoreOptionsBase<TState> = {
+  debug?: StoreDebugOptions<TState>
+}
 
-type LocalStoreWithInitialStateOptions<TState> = LocalStoreOptionsBase & {
+type LocalStoreWithInitialStateOptions<TState> = LocalStoreOptionsBase<TState> & {
   initialState: TState
   loadInitialState?: never
 }
 
 type LocalStoreWithLoadInitialStateOptions<TState, TPlugins> =
-  LocalStoreOptionsBase & {
+  LocalStoreOptionsBase<TState> & {
     initialState?: never
     loadInitialState: StoreInitialStateLoader<TState, TPlugins>
   }
 
-type LocalStoreDeclaredInitialStateOptions = LocalStoreOptionsBase & {
+type LocalStoreDeclaredInitialStateOptions<TState> = LocalStoreOptionsBase<TState> & {
   initialState?: never
   loadInitialState?: never
 }
 
 type LocalStoreOptions<TState, TPlugins> =
-  | LocalStoreDeclaredInitialStateOptions
+  | LocalStoreDeclaredInitialStateOptions<TState>
   | LocalStoreWithInitialStateOptions<TState>
   | LocalStoreWithLoadInitialStateOptions<TState, TPlugins>
 
@@ -39,14 +43,16 @@ export function useLocalStore<TState, TPlugins>(
 ): Store<TState, TPlugins> {
   const initializeStartedRef = useRef(false)
   const localStoreRef = useRef<Store<TState, TPlugins> | null>(null)
+  const [, forceRender] = useState(0)
   const hasInitialState =
     options !== undefined &&
     Object.prototype.hasOwnProperty.call(options, 'initialState')
 
   if (!localStoreRef.current) {
-    localStoreRef.current = hasInitialState
-      ? builder.create(options?.initialState as TState)
-      : builder.create()
+    localStoreRef.current = builder.create(
+      hasInitialState ? (options?.initialState as TState) : undefined,
+      { debug: options?.debug },
+    )
   }
 
   const initializeStore = useEffectEvent(async () => {
@@ -56,12 +62,71 @@ export function useLocalStore<TState, TPlugins>(
       return
     }
 
-    const nextState = await options.loadInitialState({ store: localStore })
-    await localStore.setInitialState(nextState)
+    emitStoreDebugEvent(localStore, {
+      detail: {
+        initMode: 'loadInitialState',
+        owner: 'local',
+      },
+      event: 'local.initialize.started',
+      source: 'react',
+    })
+    transitionStoreLifecycle(
+      localStore,
+      localStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+      {
+        status: 'initializing',
+        error: null,
+      },
+      {
+        source: 'react',
+      },
+    )
+
+    try {
+      const nextState = await options.loadInitialState({ store: localStore })
+      await localStore.setInitialState(nextState)
+      emitStoreDebugEvent(localStore, {
+        detail: {
+          initMode: 'loadInitialState',
+          owner: 'local',
+        },
+        event: 'local.initialize.completed',
+        source: 'react',
+      })
+    } catch (error) {
+      emitStoreDebugEvent(localStore, {
+        detail: {
+          initMode: 'loadInitialState',
+          owner: 'local',
+        },
+        error,
+        event: 'local.initialize.failed',
+        source: 'react',
+      })
+      transitionStoreLifecycle(
+        localStore,
+        localStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+        {
+          status: 'error',
+          error,
+        },
+        {
+          source: 'react',
+        },
+      )
+    }
   })
 
   useEffect(() => {
     const localStore = localStoreRef.current
+
+    if (!localStore) {
+      return
+    }
+
+    const subscription = localStore.lifecycle.meta.subscribe(() => {
+      forceRender((value) => value + 1)
+    })
 
     if (
       localStore &&
@@ -74,6 +139,8 @@ export function useLocalStore<TState, TPlugins>(
     }
 
     return () => {
+      subscription.unsubscribe()
+
       if (!localStore) {
         return
       }
@@ -83,4 +150,9 @@ export function useLocalStore<TState, TPlugins>(
   }, [initializeStore, options?.loadInitialState])
 
   return localStoreRef.current
+}
+
+type WritableReadableStore<TState> = {
+  get(): TState
+  setState(updater: (prev: TState) => TState): void
 }

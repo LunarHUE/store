@@ -6,13 +6,14 @@ import {
   type ReactNode,
 } from 'react'
 
+import { emitStoreDebugEvent, transitionStoreLifecycle } from '../core/logger'
 import { getStoreBuilder } from '../core/builder-registry'
 import { getStoreContext } from './context'
 
 import type {
-  ReadableStore,
   Store,
   StoreBuilder,
+  StoreDebugOptions,
   StoreInitialStateLoader,
   StoreLifecycleMeta,
 } from '../core'
@@ -24,6 +25,7 @@ type StoreProviderChildren<TState, TPlugins> =
 type BuilderProviderBaseProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins>
   children?: StoreProviderChildren<TState, TPlugins>
+  debug?: StoreDebugOptions<TState>
   hasInitialState?: boolean
   store?: never
 }
@@ -54,6 +56,7 @@ type BuilderProviderProps<TState, TPlugins> =
 type BuilderOwnedStoreProviderProps<TState, TPlugins> = {
   builder: StoreBuilder<TState, TPlugins>
   children?: StoreProviderChildren<TState, TPlugins>
+  debug?: StoreDebugOptions<TState>
   hasInitialState: boolean
   initialState?: TState
   loadInitialState?: StoreInitialStateLoader<TState, TPlugins>
@@ -93,6 +96,7 @@ export function StoreProvider<TState, TPlugins>(
     return (
       <BuilderOwnedStoreProvider
         builder={props.builder}
+        debug={props.debug}
         hasInitialState={'initialState' in props}
         initialState={props.initialState}
         loadInitialState={props.loadInitialState}
@@ -112,22 +116,10 @@ export function StoreProvider<TState, TPlugins>(
 // Native and Expo declare this globally in development mode.
 declare const __DEV__: boolean
 
-type WritableReadableStore<TState> = ReadableStore<TState> & {
-  setState(updater: (prev: TState) => TState): void
-}
-
-function updateLifecycleMeta<TState, TPlugins>(
-  store: Store<TState, TPlugins>,
-  updater: (prev: StoreLifecycleMeta) => StoreLifecycleMeta,
-) {
-  ;(
-    store.lifecycle.meta as WritableReadableStore<StoreLifecycleMeta>
-  ).setState(updater)
-}
-
 function BuilderOwnedStoreProvider<TState, TPlugins>({
   builder,
   children,
+  debug,
   hasInitialState,
   initialState,
   loadInitialState,
@@ -153,9 +145,10 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   }
 
   if (!storeRef.current) {
-    storeRef.current = hasInitialState
-      ? builder.create(initialState as TState)
-      : builder.create()
+    storeRef.current = builder.create(
+      hasInitialState ? (initialState as TState) : undefined,
+      { debug },
+    )
   }
 
   const initializeStore = useEffectEvent(async () => {
@@ -165,20 +158,58 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
       return
     }
 
-    updateLifecycleMeta(ownedStore, (prev) => ({
-      ...prev,
-      status: 'initializing',
-      error: null,
-    }))
+    emitStoreDebugEvent(ownedStore, {
+      detail: {
+        initMode: 'loadInitialState',
+        owner: 'provider',
+      },
+      event: 'provider.initialize.started',
+      source: 'react',
+    })
+    transitionStoreLifecycle(
+      ownedStore,
+      ownedStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+      {
+        status: 'initializing',
+        error: null,
+      },
+      {
+        source: 'react',
+      },
+    )
 
     try {
       const nextState = await loadInitialState({ store: ownedStore })
       await ownedStore.setInitialState(nextState)
+      emitStoreDebugEvent(ownedStore, {
+        detail: {
+          initMode: 'loadInitialState',
+          owner: 'provider',
+        },
+        event: 'provider.initialize.completed',
+        source: 'react',
+      })
     } catch (error) {
-      updateLifecycleMeta(ownedStore, () => ({
-        status: 'error',
+      emitStoreDebugEvent(ownedStore, {
+        detail: {
+          initMode: 'loadInitialState',
+          owner: 'provider',
+        },
         error,
-      }))
+        event: 'provider.initialize.failed',
+        source: 'react',
+      })
+      transitionStoreLifecycle(
+        ownedStore,
+        ownedStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+        {
+          status: 'error',
+          error,
+        },
+        {
+          source: 'react',
+        },
+      )
     }
   })
 
@@ -189,11 +220,30 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
       return
     }
 
+    emitStoreDebugEvent(ownedStore, {
+      detail: {
+        mode: 'builder',
+        owner: 'provider',
+      },
+      event: 'provider.mount',
+      minimumLevel: 'verbose',
+      source: 'react',
+    })
+
     const subscription = ownedStore.lifecycle.meta.subscribe(() => {
       forceRender((value) => value + 1)
     })
 
     return () => {
+      emitStoreDebugEvent(ownedStore, {
+        detail: {
+          mode: 'builder',
+          owner: 'provider',
+        },
+        event: 'provider.unmount',
+        minimumLevel: 'verbose',
+        source: 'react',
+      })
       subscription.unsubscribe()
 
       if (!ownedStore) {
@@ -260,9 +310,38 @@ function ExternalStoreProvider<TState, TPlugins>({
     )
   }
 
+  useEffect(() => {
+    emitStoreDebugEvent(store, {
+      detail: {
+        mode: 'external',
+        owner: 'provider',
+      },
+      event: 'provider.mount',
+      minimumLevel: 'verbose',
+      source: 'react',
+    })
+
+    return () => {
+      emitStoreDebugEvent(store, {
+        detail: {
+          mode: 'external',
+          owner: 'provider',
+        },
+        event: 'provider.unmount',
+        minimumLevel: 'verbose',
+        source: 'react',
+      })
+    }
+  }, [store])
+
   const context = getStoreContext(builder)
   const content =
     typeof children === 'function' ? children({ store }) : children
 
   return <context.Provider value={store}>{content}</context.Provider>
+}
+
+type WritableReadableStore<TState> = {
+  get(): TState
+  setState(updater: (prev: TState) => TState): void
 }
