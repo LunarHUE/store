@@ -1,5 +1,12 @@
 # @lunarhue/store-example-nextjs
 
+## 0.1.3
+
+### Patch Changes
+
+- Updated dependencies [[`4f2164e`](https://github.com/LunarHUE/store/commit/4f2164e062a43bf97caefd87ed8930ee18a158c7)]:
+  - @lunarhue/store@0.3.1
+
 ## 0.1.2
 
 ### Patch Changes
