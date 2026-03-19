@@ -1,5 +1,11 @@
 # @lunarhue/store
 
+## 0.3.0
+
+### Minor Changes
+
+- [#47](https://github.com/LunarHUE/store/pull/47) [`7f4cb37`](https://github.com/LunarHUE/store/commit/7f4cb3703c6f88beb045d888af52a6c03353c2ec) Thanks [@tristendillon](https://github.com/tristendillon)! - Move store readiness into the core runtime so builders can be declared without fake initial values. Add explicit initialization APIs with `store.setInitialState(...)`, `store.lifecycle.meta`, `StoreBuilder.create(initialState)`, and provider-managed `initialState` / `loadInitialState` flows in React and SSR.
+
 ## Unreleased
 
 ### Minor Changes
