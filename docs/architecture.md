@@ -90,7 +90,9 @@ state exists.
 - if no matching provider exists, the hook throws loudly
 
 `useLocalStore(builder)` is the explicit local-ownership escape hatch. It
-creates a store instance locally and disposes it on unmount.
+creates a store instance locally and disposes it on unmount. If the builder has
+no declared initial state and no local `initialState` or `loadInitialState` is
+provided, that local store begins uninitialized just like a builder-owned one.
 
 `useStoreSelector(builder, selector)` is the provider-scoped convenience hook
 for state selection. It resolves the store from context and then subscribes via
@@ -108,6 +110,7 @@ Core owns store readiness and initialization. The persistence plugin owns:
 - debounced persistence
 - flush semantics
 - the persistence meta store
+- declaration-time persistence defaults
 
 The React plugin layer owns:
 
@@ -117,6 +120,11 @@ The React plugin layer owns:
 `PersistStoreProvider` composes the generic `StoreProvider`, so it can forward
 `initialState` and `loadInitialState` while keeping persistence concerns limited to
 write coordination.
+
+`persist(...)` does not start persistence by itself. The runtime connection
+still needs `onPersist`, provided either at declaration time or through the
+provider's runtime `persist` prop. Runtime `persist` options may override
+declaration-time `delay` and `onPersist`, while `enabled` is runtime-only.
 
 On web:
 
