@@ -1,5 +1,13 @@
 # @lunarhue/store
 
+## 0.3.1
+
+### Patch Changes
+
+- [#49](https://github.com/LunarHUE/store/pull/49) [`4f2164e`](https://github.com/LunarHUE/store/commit/4f2164e062a43bf97caefd87ed8930ee18a158c7) Thanks [@tristendillon](https://github.com/tristendillon)! - Split native-only tests onto Jest while keeping the existing web suite on
+  Vitest, and add dedicated React Native persistence coverage around provider
+  mounting and flush behavior to harden the 0.3.1 release path.
+
 ## 0.3.0
 
 ### Minor Changes
