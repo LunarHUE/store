@@ -1,6 +1,6 @@
 {
   "name": "@lunarhue/store",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "description": "Framework-agnostic state built on top of @tanstack/store with typed plugins and React bindings.",
   "license": "MIT",
   "homepage": "https://github.com/LunarHUE/store#readme",

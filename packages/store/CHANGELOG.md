@@ -1,5 +1,15 @@
 # @lunarhue/store
 
+## 0.4.0
+
+### Minor Changes
+
+- [#52](https://github.com/LunarHUE/store/pull/52) [`d2e0e76`](https://github.com/LunarHUE/store/commit/d2e0e76a262abc3dbfca852e6c3a3408ff0a9bb0) Thanks [@tristendillon](https://github.com/tristendillon)! - Add an opt-in runtime debugger for `@lunarhue/store` with structured event logging for store lifecycle, subscriptions, React-owned initialization, and persist flows.
+
+  Runtime stores can now be created with `debug` options, builder-owned providers and `useLocalStore` can forward those options, and plugins can emit custom events through `StorePluginContext.logger.emit(...)`.
+
+  Also add example usage of a custom debug sink in the Next.js example app.
+
 ## 0.3.1
 
 ### Patch Changes
