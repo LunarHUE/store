@@ -24,9 +24,7 @@ export function persist<TState>(
 
     return {
       persist: {
-        flush() {
-          return controller.flush()
-        },
+        flush: controller.flush,
         meta: controller.meta,
         [persistControllerKey]: controller,
       },
