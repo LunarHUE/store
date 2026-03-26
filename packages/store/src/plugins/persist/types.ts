@@ -70,10 +70,35 @@ export type PersistRuntimeOptions<TState> = {
 export type PersistPluginOptions<TState> = {
   /**
    * Flushes queued persistence work when the runtime store is disposed.
+   *
+   * @default false
    */
   flushOnDispose?: boolean
   /**
+   * Determines whether a state transition should be queued for persistence.
+   *
+   * Return `true` to mark the change as persistable, or `false` to ignore it.
+   *
+   * @example
+   * // Only persist when notes change
+   * shouldQueuePersist: (prev, next) => prev?.notes !== next.notes
+   */
+  shouldQueuePersist?: (
+    previousState: TState | undefined,
+    nextState: TState,
+  ) => boolean
+  /**
    * Transforms state before `onPersist` receives it.
+   *
+   * @example
+   * // convert bigint to number before persistence to avoid serialization errors
+   * serializeState: (state: { id: bigint}) => {
+   *   const id = convertBigintToNumber(state.id)
+   *   return {
+   *     ...state,
+   *     id,
+   *   }
+   * }
    */
   serializeState?: (state: TState) => TState
 } & Omit<PersistRuntimeOptions<TState>, 'enabled'>

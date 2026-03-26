@@ -157,5 +157,8 @@ export const PlannerStore = createStore<PlannerState>()
       async onPersist({ nextState }) {
         setPlannerStateToClientCookies(nextState)
       },
+      shouldQueuePersist: (previousState, nextState) => {
+        return previousState?.notes !== nextState.notes
+      },
     }),
   )

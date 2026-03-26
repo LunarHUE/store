@@ -116,8 +116,15 @@ export function createPersistController<TState>(
     })
   }
 
-  const canPersist = () => {
-    return state.connected && state.runtimeOptions?.enabled
+  const canPersist = (previousState: TState | undefined, nextState: TState) => {
+    const isPersistable = state.connected && state.runtimeOptions?.enabled
+    if (pluginOptions?.shouldQueuePersist) {
+      return (
+        isPersistable &&
+        pluginOptions.shouldQueuePersist(previousState, nextState)
+      )
+    }
+    return isPersistable
   }
 
   const hasEnabledRuntime = () => {
@@ -232,7 +239,7 @@ export function createPersistController<TState>(
       const previousState = state.lastObservedState
       state.lastObservedState = nextState
 
-      if (!canPersist()) {
+      if (!canPersist(previousState, nextState)) {
         return
       }
 
