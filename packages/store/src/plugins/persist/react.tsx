@@ -1,28 +1,27 @@
 import {
-  createContext,
   type Context,
   type ReactNode,
+  createContext,
   useContext,
   useEffect,
   useEffectEvent,
 } from 'react'
 
-import { emitStoreDebugEvent } from '../../core/logger'
 import type {
   StoreBuilder,
   StoreDebugOptions,
   StoreInitialStateLoader,
 } from '../../core'
 import { getStoreBuilder } from '../../core/builder-registry'
+import { emitStoreDebugEvent } from '../../core/logger'
 import { StoreProvider } from '../../react'
-
 import {
-  persistControllerKey,
   type InternalPersistedStore,
   type PersistPersistArgs,
-  type PersistStoreSurface,
   type PersistRuntimeOptions,
+  type PersistStoreSurface,
   type PersistedStore,
+  persistControllerKey,
 } from './types'
 
 type AppStateStatus = 'active' | 'inactive' | 'background' | (string & {})
@@ -36,7 +35,7 @@ type ReactNativeRuntimeModule = {
     currentState?: AppStateStatus
     addEventListener(
       type: 'change',
-      listener: (nextState: AppStateStatus) => void,
+      listener: (nextState: AppStateStatus) => void
     ): ReactNativeAppStateSubscription
   }
   Platform?: {
@@ -152,7 +151,7 @@ export type PersistStoreProviderProps<TState, TPlugins = {}> =
   | ExternalPersistStoreProviderProps<TState, TPlugins>
 
 function resolveReactNativeAppState(
-  runtimeModule: ReactNativeRuntimeModule | null,
+  runtimeModule: ReactNativeRuntimeModule | null
 ): ReactNativeRuntimeModule['AppState'] | null {
   if (!runtimeModule) {
     return null
@@ -165,12 +164,14 @@ function resolveReactNativeAppState(
   return runtimeModule.AppState ?? null
 }
 
-function loadReactNativeAppStateSync(): ReactNativeRuntimeModule['AppState'] | null {
+function loadReactNativeAppStateSync():
+  | ReactNativeRuntimeModule['AppState']
+  | null {
   let runtimeRequire: RuntimeRequire | undefined
 
   try {
     runtimeRequire = Function(
-      'return typeof require === "function" ? require : undefined',
+      'return typeof require === "function" ? require : undefined'
     )() as RuntimeRequire | undefined
   } catch {
     return null
@@ -196,7 +197,7 @@ async function loadReactNativeAppStateAsync(): Promise<
   try {
     runtimeImport = Function(
       'specifier',
-      'return import(specifier)',
+      'return import(specifier)'
     ) as RuntimeImport
   } catch {
     return null
@@ -210,7 +211,7 @@ async function loadReactNativeAppStateAsync(): Promise<
 }
 
 function getPersistStoreContext<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
 ): PersistStoreContext<TState, TPlugins> {
   let context = persistContextMap.get(builder)
 
@@ -226,7 +227,7 @@ function getPersistStoreContext<TState, TPlugins>(
 
 function usePersistentRuntime<TState, TPlugins = {}>(
   store: InternalPersistedStore<TState, TPlugins>,
-  options: PersistRuntimeOptions<TState>,
+  options: PersistRuntimeOptions<TState>
 ): PersistentStoreResult<TState, TPlugins> {
   const onPersist = useEffectEvent(async (args: PersistPersistArgs<TState>) => {
     if (!options.onPersist) {
@@ -258,15 +259,15 @@ function usePersistentRuntime<TState, TPlugins = {}>(
  * This hook requires a matching {@link PersistStoreProvider} ancestor.
  */
 export function usePersistentStore<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>,
+  builder: StoreBuilder<TState, TPlugins & PersistStoreSurface>
 ): PersistentStoreResult<TState, TPlugins> {
   const contextValue = useContext(
-    getPersistStoreContext<TState, TPlugins>(builder),
+    getPersistStoreContext<TState, TPlugins>(builder)
   )
 
   if (!contextValue) {
     throw new Error(
-      'usePersistentStore(builder) requires a matching <PersistStoreProvider builder={...}> or <PersistStoreProvider store={...}> ancestor.',
+      'usePersistentStore(builder) requires a matching <PersistStoreProvider builder={...}> or <PersistStoreProvider store={...}> ancestor.'
     )
   }
 
@@ -275,7 +276,7 @@ export function usePersistentStore<TState, TPlugins>(
 
 function flushPersistenceBoundary<TState>(
   store: PersistedStore<TState>,
-  trigger: 'background' | 'pagehide' | 'unmount',
+  trigger: 'background' | 'pagehide' | 'unmount'
 ) {
   emitStoreDebugEvent(store, {
     detail: {
@@ -290,7 +291,7 @@ function flushPersistenceBoundary<TState>(
 
 function usePersistenceBoundary<TState>(
   store: PersistedStore<TState>,
-  options: PersistenceBoundaryOptions,
+  options: PersistenceBoundaryOptions
 ) {
   const { flushOnUnmount, flushOnPageHide, flushOnBackground } = options
   useEffect(() => {
@@ -325,7 +326,7 @@ function usePersistenceBoundary<TState>(
     }
 
     const subscribeToAppState = (
-      appState: NonNullable<ReactNativeRuntimeModule['AppState']>,
+      appState: NonNullable<ReactNativeRuntimeModule['AppState']>
     ) => {
       previousAppState = appState.currentState ?? 'active'
       return appState.addEventListener('change', (nextAppState) => {
@@ -414,14 +415,14 @@ function PersistStoreProviderContent<TState, TPlugins>({
  * on web.
  */
 export function PersistStoreProvider<TState, TPlugins = {}>(
-  props: PersistStoreProviderProps<TState, TPlugins>,
+  props: PersistStoreProviderProps<TState, TPlugins>
 ) {
   if (!props.builder) {
     const builder = getStoreBuilder(props.store)
 
     if (!builder) {
       throw new Error(
-        'PersistStoreProvider could not resolve a builder for the provided store. Pass a persisted store created by @lunarhue/store.',
+        'PersistStoreProvider could not resolve a builder for the provided store. Pass a persisted store created by @lunarhue/store.'
       )
     }
 

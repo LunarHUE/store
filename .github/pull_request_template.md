@@ -1,10 +1,10 @@
 ## Summary
 
-- 
+-
 
 ## Linked issue
 
-- 
+-
 
 ## Validation
 

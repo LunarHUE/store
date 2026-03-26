@@ -31,10 +31,10 @@ type StoreBuilder<TState, TPlugins = {}> = {
   create(initialState: TState): Store<TState, TPlugins>
   create(
     initialState: TState | undefined,
-    options: StoreCreateOptions<TState>,
+    options: StoreCreateOptions<TState>
   ): Store<TState, TPlugins>
   extend<TNextPlugins>(
-    plugin: StorePlugin<TState, TPlugins, TNextPlugins>,
+    plugin: StorePlugin<TState, TPlugins, TNextPlugins>
   ): StoreBuilder<TState, TPlugins & TNextPlugins>
 }
 ```
@@ -42,11 +42,11 @@ type StoreBuilder<TState, TPlugins = {}> = {
 - `.extend(...)` never mutates the original builder.
 - `.create(initialState)` makes the runtime store ready immediately.
 - If the builder was declared with a default state, `.create()` is ready
-immediately.
+  immediately.
 - If the builder has no declared default and `.create()` is called without an
-override, the runtime store starts `uninitialized`.
+  override, the runtime store starts `uninitialized`.
 - Pass `create(undefined, { debug: ... })` to enable opt-in runtime debugging
-without overriding the builder's default readiness behavior.
+  without overriding the builder's default readiness behavior.
 
 ### Runtime store contract
 
@@ -104,7 +104,7 @@ Notes:
 - `trace` includes `previousState` and `nextState` on stateful events
 - built-in event names autocomplete, but custom event names are allowed
 - `source` is an open string so internal modules and custom plugins can use
-their own namespaces
+  their own namespaces
 
 Example:
 
@@ -144,7 +144,7 @@ API is provider-first.
 
 - `builder={...}`: the provider creates and owns the runtime store lifecycle
 - `store={...}`: the provider reuses an external runtime store and does not own
-disposal
+  disposal
 
 Children may be plain JSX or a render prop receiving `{ store }`.
 
@@ -152,7 +152,7 @@ Builder mode rules:
 
 - if the builder already has declared initial state, `<StoreProvider builder={builder}>` is valid
 - if the builder has no declared initial state, you must provide either
-`initialState` or `loadInitialState`
+  `initialState` or `loadInitialState`
 - the `builder` prop must remain stable for the lifetime of the provider
 - builder mode also accepts `debug?: StoreDebugOptions<TState>`
 
@@ -266,7 +266,7 @@ const CounterStore = createStore({ count: 0 }).extend(
     decrement() {
       setState((prev) => ({ count: prev.count - 1 }))
     },
-  })),
+  }))
 )
 ```
 
@@ -279,8 +279,8 @@ actions plugin.
 
 ```ts
 import {
-  persist,
   PersistStoreProvider,
+  persist,
   usePersistentStore,
 } from '@lunarhue/store/plugins/persist'
 ```
@@ -307,7 +307,7 @@ Notes:
 - `delay` and `onPersist` act as defaults for runtime wiring
 - `enabled` is runtime-only and is not accepted by `persist(...)`
 - `onPersist` must be provided either here or at runtime before persistence can
-run
+  run
 
 ### Persist metadata
 

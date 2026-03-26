@@ -1,8 +1,8 @@
 ---
 name: Prototype Epic
 about: Track the full `@lunarhue/store` prototype effort
-title: "Prototype: build @lunarhue/store vNext on TanStack Store"
-labels: ["prototype", "epic"]
+title: 'Prototype: build @lunarhue/store vNext on TanStack Store'
+labels: ['prototype', 'epic']
 assignees: []
 ---
 

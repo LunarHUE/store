@@ -1,8 +1,7 @@
 import { useContext } from 'react'
 
-import { getStoreContext } from './context'
-
 import type { Store, StoreBuilder } from '../core'
+import { getStoreContext } from './context'
 
 /**
  * Returns the runtime store provided for a builder.
@@ -11,15 +10,15 @@ import type { Store, StoreBuilder } from '../core'
  * the same builder or a runtime store created from that builder.
  */
 export function useStore<TState, TPlugins>(
-  builder: StoreBuilder<TState, TPlugins>,
+    builder: StoreBuilder<TState, TPlugins>
 ): Store<TState, TPlugins> {
-  const contextValue = useContext(getStoreContext(builder))
+    const contextValue = useContext(getStoreContext(builder))
 
-  if (!contextValue) {
-    throw new Error(
-      'useStore(builder) requires a matching <StoreProvider builder={...}> or <StoreProvider store={...}> ancestor.',
-    )
-  }
+    if (!contextValue) {
+        throw new Error(
+            'useStore(builder) requires a matching <StoreProvider builder={...}> or <StoreProvider store={...}> ancestor.'
+        )
+    }
 
-  return contextValue
+    return contextValue
 }

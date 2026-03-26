@@ -20,6 +20,9 @@
     "typecheck": {
       "dependsOn": ["^build"],
       "outputs": []
+    },
+    "format:check": {
+      "outputs": []
     }
   }
 }

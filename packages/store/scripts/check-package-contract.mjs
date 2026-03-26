@@ -9,15 +9,15 @@ import {
   symlinkSync,
   writeFileSync,
 } from 'node:fs'
-import path from 'node:path'
 import { createRequire } from 'node:module'
+import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const require = createRequire(import.meta.url)
 const scriptDir = path.dirname(fileURLToPath(import.meta.url))
 const packageRoot = path.resolve(scriptDir, '..')
 const packageJson = JSON.parse(
-  readFileSync(path.join(packageRoot, 'package.json'), 'utf8'),
+  readFileSync(path.join(packageRoot, 'package.json'), 'utf8')
 )
 
 const expectedExports = {
@@ -43,29 +43,29 @@ function assertExportsMatchPackageContract() {
   assert.equal(
     packageJson.types,
     undefined,
-    'package root should not declare a types entry without a root export',
+    'package root should not declare a types entry without a root export'
   )
   assert.deepEqual(
     packageJson.exports,
     expectedExports,
-    'package exports map should match the supported public entrypoints exactly',
+    'package exports map should match the supported public entrypoints exactly'
   )
 
   for (const target of Object.values(expectedExports)) {
     assert.ok(
       existsSync(path.join(packageRoot, target.import)),
-      `Missing built import target: ${target.import}`,
+      `Missing built import target: ${target.import}`
     )
     assert.ok(
       existsSync(path.join(packageRoot, target.types)),
-      `Missing built type target: ${target.types}`,
+      `Missing built type target: ${target.types}`
     )
   }
 }
 
 async function assertRuntimeImports() {
-  for (const specifier of Object.keys(expectedExports).map((subpath) =>
-    `@lunarhue/store${subpath.slice(1)}`,
+  for (const specifier of Object.keys(expectedExports).map(
+    (subpath) => `@lunarhue/store${subpath.slice(1)}`
   )) {
     await import(specifier)
   }
@@ -73,17 +73,17 @@ async function assertRuntimeImports() {
   await assert.rejects(
     () => import('@lunarhue/store'),
     (error) => error?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED',
-    'package root should not be importable',
+    'package root should not be importable'
   )
   await assert.rejects(
     () => import('@lunarhue/store/core/types'),
     (error) => error?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED',
-    'private core internals should not be importable',
+    'private core internals should not be importable'
   )
   await assert.rejects(
     () => import('@lunarhue/store/plugins/persist/types'),
     (error) => error?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED',
-    'private plugin internals should not be importable',
+    'private plugin internals should not be importable'
   )
 }
 
@@ -112,14 +112,14 @@ function runTypeScriptCheck(cwd, files, shouldPass) {
     {
       cwd,
       encoding: 'utf8',
-    },
+    }
   )
 
   if (shouldPass) {
     assert.equal(
       result.status,
       0,
-      `Expected TypeScript to pass.\n${result.stdout}${result.stderr}`,
+      `Expected TypeScript to pass.\n${result.stdout}${result.stderr}`
     )
     return
   }
@@ -128,7 +128,7 @@ function runTypeScriptCheck(cwd, files, shouldPass) {
   assert.match(
     `${result.stdout}${result.stderr}`,
     /Cannot find module '@lunarhue\/store|Cannot find module '@lunarhue\/store\/core\/types|Cannot find module '@lunarhue\/store\/plugins\/persist\/types/,
-    'Expected TypeScript to reject private or missing package entrypoints',
+    'Expected TypeScript to reject private or missing package entrypoints'
   )
 }
 
@@ -226,7 +226,7 @@ void usePersistentStore
 void useSelector
 void useStore
 void useStoreSelector
-`,
+`
   )
 
   const pluginAuthorFixturePath = path.join(tempDir, 'plugin-author.ts')
@@ -270,7 +270,7 @@ const CounterStore = createStore<CounterState>({ count: 0 }).extend(
 
 const store = CounterStore.create()
 store.logSnapshot()
-`,
+`
   )
 
   const invalidFixturePath = path.join(tempDir, 'invalid-imports.ts')
@@ -283,7 +283,7 @@ import type { PersistMeta } from '@lunarhue/store/plugins/persist/types'
 type RootStore = Store<unknown>
 type InternalStoreState = StoreState<any>
 type InternalPersistMeta = PersistMeta
-`,
+`
   )
 
   return {
@@ -304,7 +304,7 @@ async function main() {
     runTypeScriptCheck(
       fixtures.tempDir,
       [fixtures.consumerFixturePath, fixtures.pluginAuthorFixturePath],
-      true,
+      true
     )
     runTypeScriptCheck(fixtures.tempDir, [fixtures.invalidFixturePath], false)
   } finally {

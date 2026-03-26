@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
-
 import { act, cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { renderToString } from 'react-dom/server'
 import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createStore } from '../src/core'
 import { StoreProvider, useStore } from '../src/react'
@@ -24,7 +23,7 @@ describe('StoreProvider — initialState wiring', () => {
     render(
       <StoreProvider builder={builder} initialState={{ count: 42 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('42')).toBeTruthy()
@@ -41,7 +40,7 @@ describe('StoreProvider — initialState wiring', () => {
     render(
       <StoreProvider builder={builder}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('0')).toBeTruthy()
@@ -58,13 +57,13 @@ describe('StoreProvider — initialState wiring', () => {
     const { rerender } = render(
       <StoreProvider builder={builder} initialState={{ count: 42 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     rerender(
       <StoreProvider builder={builder} initialState={{ count: 99 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     // Still 42 — the store was already created with the first value
@@ -88,7 +87,7 @@ describe('StoreProvider — SSR', () => {
     const html = renderToString(
       <StoreProvider builder={builder} initialState={{ count: 42 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(html).toContain('42')
@@ -101,7 +100,7 @@ describe('StoreProvider — SSR', () => {
     renderToString(
       <StoreProvider builder={builder} loadInitialState={loadInitialState}>
         <div>probe</div>
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(loadInitialState).not.toHaveBeenCalled()
@@ -118,7 +117,7 @@ describe('StoreProvider — SSR', () => {
     const html = renderToString(
       <StoreProvider builder={builder} initialState={{ count: 42 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     const container = document.createElement('div')
@@ -131,7 +130,7 @@ describe('StoreProvider — SSR', () => {
         container,
         <StoreProvider builder={builder} initialState={{ count: 42 }}>
           <Probe />
-        </StoreProvider>,
+        </StoreProvider>
       )
     })
 
