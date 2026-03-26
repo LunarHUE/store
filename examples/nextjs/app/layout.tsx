@@ -29,13 +29,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={cn(bodyFont.variable, displayFont.variable)}>
-      <head>
+      {/* <head>
         <Script
           src="//unpkg.com/react-scan/dist/auto.global.js"
           crossOrigin="anonymous"
           strategy="beforeInteractive"
         />
-      </head>
+      </head> */}
       <body className="min-h-screen bg-background text-foreground antialiased">
         {children}
       </body>
