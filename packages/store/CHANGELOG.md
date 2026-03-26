@@ -1,5 +1,14 @@
 # @lunarhue/store
 
+## 0.4.1
+
+### Patch Changes
+
+- - feat(persist): add `shouldQueuePersist` option to filter which state transitions are queued for persistence by @tristendillon in [#55](https://github.com/LunarHUE/store/issues/55)
+  - ci: run checks on PRs targeting changeset branches by @tristendillon in [#57](https://github.com/LunarHUE/store/issues/57)
+  - chore: add prettier config, gitattributes, and sort-imports plugin by @tristendillon in [#62](https://github.com/LunarHUE/store/issues/62)
+  - chore: add format:check to packages, examples, turbo tasks, and CI by @tristendillon in [#61](https://github.com/LunarHUE/store/issues/61)
+
 ## 0.4.0
 
 ### Minor Changes
