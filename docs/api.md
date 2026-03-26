@@ -2,7 +2,7 @@
 
 `@lunarhue/store` ships four public entry points:
 
-- `@lunarhue/store/corep`
+- `@lunarhue/store/core`
 - `@lunarhue/store/react`
 - `@lunarhue/store/plugins/actions`
 - `@lunarhue/store/plugins/persist`
