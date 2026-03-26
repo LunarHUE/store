@@ -1,12 +1,11 @@
 'use client'
 
-import { startTransition, useDeferredValue } from 'react'
-
 import { useStoreSelector } from '@lunarhue/store/react'
 import { RotateCcw, Search } from 'lucide-react'
+import { startTransition, useDeferredValue } from 'react'
 
-import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import {
   Card,
   CardContent,
@@ -18,10 +17,10 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import {
   CATALOG,
-  PRODUCT_CATEGORIES,
-  formatCurrency,
   type CatalogItem,
+  PRODUCT_CATEGORIES,
   type ProductCategory,
+  formatCurrency,
 } from '@/lib/catalog'
 import { PlannerStore } from '@/lib/planner-store'
 
@@ -97,7 +96,7 @@ function CategoryButton({
   const actions = usePlannerActions()
   const isActive = useStoreSelector(
     PlannerStore,
-    (state) => state.activeCategory === category,
+    (state) => state.activeCategory === category
   )
 
   return (
@@ -118,7 +117,7 @@ function ResetFiltersButton() {
   const actions = usePlannerActions()
   const hasFilters = useStoreSelector(
     PlannerStore,
-    (state) => state.search.trim().length > 0 || state.activeCategory !== 'all',
+    (state) => state.search.trim().length > 0 || state.activeCategory !== 'all'
   )
 
   return (
@@ -139,7 +138,7 @@ function ResetFiltersButton() {
 function CatalogList() {
   const activeCategory = useStoreSelector(
     PlannerStore,
-    (state) => state.activeCategory,
+    (state) => state.activeCategory
   )
   const search = useStoreSelector(PlannerStore, (state) => state.search)
   const deferredSearch = useDeferredValue(search)
@@ -218,7 +217,7 @@ function ProductCard({ item }: { item: CatalogItem }) {
 function QuantityBadge({ productId }: { productId: string }) {
   const quantity = useStoreSelector(
     PlannerStore,
-    (state) => state.selections[productId] ?? 0,
+    (state) => state.selections[productId] ?? 0
   )
 
   return (
@@ -246,7 +245,7 @@ function RemoveItemButton({ productId }: { productId: string }) {
   const actions = usePlannerActions()
   const canRemove = useStoreSelector(
     PlannerStore,
-    (state) => state.selections[productId] ?? 0 > 0,
+    (state) => state.selections[productId] ?? 0 > 0
   )
 
   return (

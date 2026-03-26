@@ -1,5 +1,4 @@
 import { PlannerDemo } from '@/components/planner/demo'
-
 import { getPlannerStateFromServerCookies } from '@/lib/cookies'
 
 export default async function Home() {

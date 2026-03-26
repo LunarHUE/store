@@ -1,14 +1,10 @@
 import {
+  type ReactNode,
   useEffect,
   useEffectEvent,
   useRef,
   useState,
-  type ReactNode,
 } from 'react'
-
-import { emitStoreDebugEvent, transitionStoreLifecycle } from '../core/logger'
-import { getStoreBuilder } from '../core/builder-registry'
-import { getStoreContext } from './context'
 
 import type {
   Store,
@@ -17,6 +13,9 @@ import type {
   StoreInitialStateLoader,
   StoreLifecycleMeta,
 } from '../core'
+import { getStoreBuilder } from '../core/builder-registry'
+import { emitStoreDebugEvent, transitionStoreLifecycle } from '../core/logger'
+import { getStoreContext } from './context'
 
 type StoreProviderChildren<TState, TPlugins> =
   | ReactNode
@@ -90,7 +89,7 @@ export type ProviderProps<TState, TPlugins = {}> =
  * runtime store instance.
  */
 export function StoreProvider<TState, TPlugins>(
-  props: ProviderProps<TState, TPlugins>,
+  props: ProviderProps<TState, TPlugins>
 ) {
   if (props.builder !== undefined) {
     return (
@@ -147,7 +146,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   if (!storeRef.current) {
     storeRef.current = builder.create(
       hasInitialState ? (initialState as TState) : undefined,
-      { debug },
+      { debug }
     )
   }
 
@@ -168,14 +167,15 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
     })
     transitionStoreLifecycle(
       ownedStore,
-      ownedStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+      ownedStore.lifecycle
+        .meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
       {
         status: 'initializing',
         error: null,
       },
       {
         source: 'react',
-      },
+      }
     )
 
     try {
@@ -201,14 +201,15 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
       })
       transitionStoreLifecycle(
         ownedStore,
-        ownedStore.lifecycle.meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
+        ownedStore.lifecycle
+          .meta as unknown as WritableReadableStore<StoreLifecycleMeta>,
         {
           status: 'error',
           error,
         },
         {
           source: 'react',
-        },
+        }
       )
     }
   })
@@ -279,7 +280,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
 
   if (lifecycleMeta.status === 'uninitialized' && !loadInitialState) {
     throw new Error(
-      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.',
+      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.'
     )
   }
 
@@ -291,9 +292,7 @@ function BuilderOwnedStoreProvider<TState, TPlugins>({
   }
 
   const content =
-    typeof children === 'function'
-      ? children({ store: ownedStore })
-      : children
+    typeof children === 'function' ? children({ store: ownedStore }) : children
 
   return <context.Provider value={ownedStore}>{content}</context.Provider>
 }
@@ -306,7 +305,7 @@ function ExternalStoreProvider<TState, TPlugins>({
 
   if (!builder) {
     throw new Error(
-      'StoreProvider could not resolve a builder for the provided store. Pass a store created by @lunarhue/store.',
+      'StoreProvider could not resolve a builder for the provided store. Pass a store created by @lunarhue/store.'
     )
   }
 

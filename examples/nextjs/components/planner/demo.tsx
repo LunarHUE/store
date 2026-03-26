@@ -2,7 +2,7 @@
 
 import { PersistStoreProvider } from '@lunarhue/store/plugins/persist'
 
-import { PlannerStore, type PlannerState } from '@/lib/planner-store'
+import { type PlannerState, PlannerStore } from '@/lib/planner-store'
 
 import { CatalogPanel } from './catalog-panel'
 import { NotesPanel } from './notes-panel'

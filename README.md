@@ -136,9 +136,7 @@ the scoped store instance at the provider boundary:
 ```tsx
 function App() {
   return (
-    <StoreProvider builder={CounterStore}>
-      {({ store }) => <></>}
-    </StoreProvider>
+    <StoreProvider builder={CounterStore}>{({ store }) => <></>}</StoreProvider>
   )
 }
 ```
@@ -217,7 +215,7 @@ const CounterStore = createStore({ count: 0 }).extend(
         count: prev.count - 1,
       }))
     },
-  })),
+  }))
 )
 ```
 
@@ -270,7 +268,7 @@ const DraftStore = createStore<{ body: string }>().extend(
     async onPersist({ key, nextState }) {
       window.localStorage.setItem(key, JSON.stringify(nextState))
     },
-  }),
+  })
 )
 ```
 
@@ -292,11 +290,11 @@ function DraftScreen() {
   const persistMeta = useSelector(store.persist.meta, (meta) => meta)
 
   return (
-      <div>
-        <span>Status: {status}</span>
-        <span>Pending: {String(persistMeta.pending)}</span>
-        <button onClick={() => void flush()}>Flush</button>
-      </div>
+    <div>
+      <span>Status: {status}</span>
+      <span>Pending: {String(persistMeta.pending)}</span>
+      <button onClick={() => void flush()}>Flush</button>
+    </div>
   )
 }
 
@@ -353,7 +351,7 @@ At the type level, a plugin is:
 
 ```ts
 type StorePlugin<TState, TPlugins, TNextPlugins> = (
-  context: StorePluginContext<TState, TPlugins>,
+  context: StorePluginContext<TState, TPlugins>
 ) => TNextPlugins
 ```
 
@@ -387,7 +385,7 @@ type LoggerSurface = {
 }
 
 export function logger<TState>(
-  label: string,
+  label: string
 ): StorePlugin<TState, any, LoggerSurface> {
   return ({ store, logger, onDispose }) => {
     logger.emit({

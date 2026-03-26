@@ -3,10 +3,10 @@
 import { useSelector } from '@lunarhue/store/react'
 import { Save } from 'lucide-react'
 
+import { usePlannerPersistentStore } from '@/components/planner/hooks'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader } from '@/components/ui/card'
-import { usePlannerPersistentStore } from '@/components/planner/hooks'
 
 import { PanelHeader } from './panel-header'
 
@@ -53,7 +53,7 @@ function PendingBadge() {
   const { store } = usePlannerPersistentStore()
   const isPending = useSelector(
     store.persist.meta,
-    (meta) => meta.pending || meta.persisting,
+    (meta) => meta.pending || meta.persisting
   )
 
   return (
@@ -67,7 +67,7 @@ function LastSavedLabel() {
   const { store } = usePlannerPersistentStore()
   const lastPersistedAt = useSelector(
     store.persist.meta,
-    (meta) => meta.lastPersistedAt,
+    (meta) => meta.lastPersistedAt
   )
 
   return (
@@ -83,7 +83,7 @@ function PersistErrorLabel() {
   const { store } = usePlannerPersistentStore()
   const hasError = useSelector(
     store.persist.meta,
-    (meta) => meta.error !== null,
+    (meta) => meta.error !== null
   )
 
   return (
@@ -103,7 +103,7 @@ function FlushNowButton() {
   const { flush, store } = usePlannerPersistentStore()
   const isPersisting = useSelector(
     store.persist.meta,
-    (meta) => meta.persisting,
+    (meta) => meta.persisting
   )
   const isPending = useSelector(store.persist.meta, (meta) => meta.pending)
   return (
