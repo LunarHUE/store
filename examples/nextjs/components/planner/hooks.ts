@@ -7,11 +7,11 @@ import { useStore } from '@lunarhue/store/react'
 import { PlannerStore } from '@/lib/planner-store'
 
 export function usePlannerActions() {
-  const store = useStore(PlannerStore)
+    const store = useStore(PlannerStore)
 
-  return useActions(store)
+    return useActions(store)
 }
 
 export function usePlannerPersistentStore() {
-  return usePersistentStore(PlannerStore)
+    return usePersistentStore(PlannerStore)
 }

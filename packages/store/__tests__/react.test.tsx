@@ -1,12 +1,11 @@
 // @vitest-environment jsdom
-
 import { act, cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import {
-  createStore,
   type StoreDebugEvent,
   type StorePlugin,
+  createStore,
 } from '../src/core'
 import {
   StoreProvider,
@@ -32,7 +31,7 @@ describe('react bindings', () => {
     render(
       <StoreProvider builder={builder}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('0')).toBeTruthy()
@@ -44,7 +43,7 @@ describe('react bindings', () => {
     render(
       <StoreProvider builder={builder}>
         {({ store }) => <span>{store.get().count}</span>}
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('2')).toBeTruthy()
@@ -62,7 +61,7 @@ describe('react bindings', () => {
     render(
       <StoreProvider store={store}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('4')).toBeTruthy()
@@ -75,7 +74,7 @@ describe('react bindings', () => {
     render(
       <StoreProvider store={store}>
         {({ store: scopedStore }) => <span>{scopedStore.get().count}</span>}
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('7')).toBeTruthy()
@@ -90,7 +89,7 @@ describe('react bindings', () => {
     }
 
     expect(() => render(<Probe />)).toThrow(
-      /useStore\(builder\) requires a matching/,
+      /useStore\(builder\) requires a matching/
     )
   })
 
@@ -137,7 +136,7 @@ describe('react bindings', () => {
     const view = render(
       <StoreProvider store={store}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     act(() => {
@@ -151,7 +150,7 @@ describe('react bindings', () => {
     const ownedCleanupSpy = vi.fn()
     const externalCleanupSpy = vi.fn()
     const createCleanupPlugin = (
-      cleanupSpy: () => void,
+      cleanupSpy: () => void
     ): StorePlugin<{ count: number }, any, {}> => {
       return ({ onDispose }) => {
         onDispose(() => {
@@ -163,22 +162,22 @@ describe('react bindings', () => {
     }
 
     const ownedBuilder = createStore({ count: 0 }).extend(
-      createCleanupPlugin(ownedCleanupSpy),
+      createCleanupPlugin(ownedCleanupSpy)
     )
     const externalBuilder = createStore({ count: 0 }).extend(
-      createCleanupPlugin(externalCleanupSpy),
+      createCleanupPlugin(externalCleanupSpy)
     )
     const externalStore = externalBuilder.create()
 
     const ownedView = render(
       <StoreProvider builder={ownedBuilder}>
         <span>owned</span>
-      </StoreProvider>,
+      </StoreProvider>
     )
     const externalView = render(
       <StoreProvider store={externalStore}>
         <span>external</span>
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     ownedView.unmount()
@@ -205,20 +204,20 @@ describe('react bindings', () => {
         loadInitialState={async () => ({ count: 8 })}
       >
         {({ store }) => <span>{store.get().count}</span>}
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     await screen.findByText('8')
 
     expect(events.some((event) => event.event === 'provider.mount')).toBe(true)
     expect(
-      events.some((event) => event.event === 'provider.initialize.started'),
+      events.some((event) => event.event === 'provider.initialize.started')
     ).toBe(true)
     expect(
-      events.some((event) => event.event === 'provider.initialize.completed'),
+      events.some((event) => event.event === 'provider.initialize.completed')
     ).toBe(true)
     expect(
-      events.some((event) => event.event === 'store.lifecycle.changed'),
+      events.some((event) => event.event === 'store.lifecycle.changed')
     ).toBe(true)
   })
 
@@ -250,13 +249,13 @@ describe('react bindings', () => {
     await screen.findByText('5')
 
     expect(
-      events.some((event) => event.event === 'local.initialize.started'),
+      events.some((event) => event.event === 'local.initialize.started')
     ).toBe(true)
     expect(
-      events.some((event) => event.event === 'local.initialize.completed'),
+      events.some((event) => event.event === 'local.initialize.completed')
     ).toBe(true)
     expect(
-      events.some((event) => event.event === 'store.lifecycle.changed'),
+      events.some((event) => event.event === 'store.lifecycle.changed')
     ).toBe(true)
   })
 })

@@ -7,12 +7,12 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { CATALOG_BY_ID, formatCurrency } from '@/lib/catalog'
+import { INITIAL_STATE } from '@/lib/cookies'
 import { PlannerStore } from '@/lib/planner-store'
 
 import { usePlannerActions } from './hooks'
 import { PanelHeader } from './panel-header'
 import { StatCard } from './stat-card'
-import { INITIAL_STATE } from '@/lib/cookies'
 
 export function SummaryPanel() {
   return (
@@ -55,7 +55,7 @@ function EstimatedTotalStat() {
       const item = itemById(id)
       return total + (item?.price ?? 0) * quantity
     },
-    0,
+    0
   )
   return (
     <StatCard
@@ -70,7 +70,7 @@ function TotalUnitsStat() {
   const selections = useStoreSelector(PlannerStore, (state) => state.selections)
   const totalUnits = Object.values(selections).reduce(
     (total, quantity) => total + quantity,
-    0,
+    0
   )
 
   return (
@@ -85,7 +85,7 @@ function TotalUnitsStat() {
 function DistinctSelectionsStat() {
   const distinctSelections = useStoreSelector(
     PlannerStore,
-    (state) => Object.keys(state.selections).length,
+    (state) => Object.keys(state.selections).length
   )
 
   return (
@@ -130,7 +130,7 @@ function DecreaseGuestsButton() {
   const actions = usePlannerActions()
   const canDecrease = useStoreSelector(
     PlannerStore,
-    (state) => state.guestCount > 1,
+    (state) => state.guestCount > 1
   )
 
   return (
@@ -170,7 +170,7 @@ function SelectionList() {
   const selectedProductIds = useStoreSelector(
     PlannerStore,
     (state) => Object.keys(state.selections),
-    isEqualUnordered,
+    isEqualUnordered
   )
 
   if (selectedProductIds.length === 0) {
@@ -227,7 +227,7 @@ function SelectionRow({ productId }: { productId: string }) {
 function SelectionQuantity({ productId }: { productId: string }) {
   const quantity = useStoreSelector(
     PlannerStore,
-    (state) => state.selections[productId] ?? 0,
+    (state) => state.selections[productId] ?? 0
   )
 
   return <Badge variant="outline">{quantity} in plan</Badge>
@@ -237,7 +237,7 @@ function LineTotal({ productId }: { productId: string }) {
   const catalogItem = CATALOG_BY_ID[productId]
   const quantity = useStoreSelector(
     PlannerStore,
-    (state) => state.selections[productId] ?? 0,
+    (state) => state.selections[productId] ?? 0
   )
   const lineTotal = quantity * (catalogItem?.price ?? 0)
 
@@ -267,7 +267,7 @@ function RowRemoveButton({ productId }: { productId: string }) {
   const actions = usePlannerActions()
   const canRemove = useStoreSelector(
     PlannerStore,
-    (state) => state.selections[productId] ?? 0 > 0,
+    (state) => state.selections[productId] ?? 0 > 0
   )
 
   return (
@@ -288,7 +288,7 @@ function ClearPlanButton() {
   const actions = usePlannerActions()
   const canClearPlan = useStoreSelector(
     PlannerStore,
-    (state) => Object.keys(state.selections).length > 0,
+    (state) => Object.keys(state.selections).length > 0
   )
 
   return (

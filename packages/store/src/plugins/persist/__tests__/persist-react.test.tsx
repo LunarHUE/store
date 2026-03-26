@@ -2,12 +2,11 @@
 import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
-import { createStore, type StoreDebugEvent } from '../../../core'
+import { type StoreDebugEvent, createStore } from '../../../core'
 import { useSelector, useStore, useStoreSelector } from '../../../react'
-
 import { persist } from '../plugin'
-import type { PersistPersistArgs } from '../types'
 import { PersistStoreProvider, usePersistentStore } from '../react'
+import type { PersistPersistArgs } from '../types'
 
 describe('persist react bindings', () => {
   afterEach(() => {
@@ -19,7 +18,7 @@ describe('persist react bindings', () => {
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist,
-      }),
+      })
     )
 
     function Probe() {
@@ -44,7 +43,7 @@ describe('persist react bindings', () => {
         persist={{}}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     await waitFor(() => {
@@ -56,7 +55,7 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
     const store = builder.create()
 
@@ -73,7 +72,7 @@ describe('persist react bindings', () => {
     render(
       <PersistStoreProvider store={store} persist={{}}>
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('idle:0')).toBeTruthy()
@@ -98,7 +97,7 @@ describe('persist react bindings', () => {
           runtimeStore = store
           return <span>mounted</span>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -131,7 +130,7 @@ describe('persist react bindings', () => {
           runtimeStore = store
           return <span>mounted</span>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -171,7 +170,7 @@ describe('persist react bindings', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('idle:2')).toBeTruthy()
@@ -182,7 +181,7 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist,
-      }),
+      })
     )
     const store = builder.create()
 
@@ -196,7 +195,7 @@ describe('persist react bindings', () => {
     render(
       <PersistStoreProvider store={store} persist={{}}>
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('0')).toBeTruthy()
@@ -213,12 +212,12 @@ describe('persist react bindings', () => {
   it('prefers runtime persist callbacks over declaration defaults through usePersistentStore', async () => {
     const defaultOnPersist = vi.fn(async () => {})
     const runtimeOnPersist = vi.fn(
-      async (_args: PersistPersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {}
     )
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: defaultOnPersist,
-      }),
+      })
     )
     const store = builder.create()
 
@@ -237,7 +236,7 @@ describe('persist react bindings', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -263,7 +262,7 @@ describe('persist react bindings', () => {
         }}
       >
         <span>mounted</span>
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('mounted')).toBeTruthy()
@@ -271,7 +270,7 @@ describe('persist react bindings', () => {
 
   it('passes the resolved key to runtime callbacks when the key is omitted', async () => {
     const onPersist = vi.fn(
-      async (_args: PersistPersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {}
     )
     const builder = createStore({ count: 0 }).extend(persist())
     let runtimeStore!: ReturnType<typeof builder.create>
@@ -287,7 +286,7 @@ describe('persist react bindings', () => {
           runtimeStore = store
           return <span>mounted</span>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -304,7 +303,7 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
 
     render(
@@ -320,13 +319,13 @@ describe('persist react bindings', () => {
         persist={{}}
       >
         <span>mounted</span>
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     await waitFor(() => {
-      expect(
-        events.some((event) => event.event === 'persist.connected'),
-      ).toBe(true)
+      expect(events.some((event) => event.event === 'persist.connected')).toBe(
+        true
+      )
     })
   })
 
@@ -358,7 +357,7 @@ describe('persist react bindings', () => {
           runtimeStore = store
           return <span>mounted</span>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -373,7 +372,7 @@ describe('persist react bindings', () => {
 
     await waitFor(() => {
       expect(
-        events.filter((event) => event.event === 'persist.boundary.flush'),
+        events.filter((event) => event.event === 'persist.boundary.flush')
       ).toHaveLength(2)
     })
   })
@@ -382,7 +381,7 @@ describe('persist react bindings', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
 
     function Probe() {
@@ -391,7 +390,7 @@ describe('persist react bindings', () => {
     }
 
     expect(() => render(<Probe />)).toThrow(
-      'usePersistentStore(builder) requires a matching <PersistStoreProvider builder={...}> or <PersistStoreProvider store={...}> ancestor.',
+      'usePersistentStore(builder) requires a matching <PersistStoreProvider builder={...}> or <PersistStoreProvider store={...}> ancestor.'
     )
   })
 })

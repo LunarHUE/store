@@ -3,109 +3,109 @@ import { describe, expect, it, vi } from 'vitest'
 import { createStore } from '../src/core'
 
 describe('core store', () => {
-  it('reads and writes state', () => {
-    const definition = createStore({ count: 0 })
-    const store = definition.create()
+    it('reads and writes state', () => {
+        const definition = createStore({ count: 0 })
+        const store = definition.create()
 
-    store.setState((prev) => ({ count: prev.count + 1 }))
+        store.setState((prev) => ({ count: prev.count + 1 }))
 
-    expect(store.state.count).toBe(1)
-    expect(store.get().count).toBe(1)
-  })
+        expect(store.state.count).toBe(1)
+        expect(store.get().count).toBe(1)
+    })
 
-  it('subscribes to updates', () => {
-    const definition = createStore({ count: 0 })
-    const store = definition.create()
-    const listener = vi.fn()
+    it('subscribes to updates', () => {
+        const definition = createStore({ count: 0 })
+        const store = definition.create()
+        const listener = vi.fn()
 
-    const subscription = store.subscribe(listener)
+        const subscription = store.subscribe(listener)
 
-    store.setState(() => ({ count: 2 }))
-    subscription.unsubscribe()
-    store.setState(() => ({ count: 3 }))
+        store.setState(() => ({ count: 2 }))
+        subscription.unsubscribe()
+        store.setState(() => ({ count: 3 }))
 
-    expect(listener).toHaveBeenCalledTimes(1)
-    expect(listener).toHaveBeenCalledWith({ count: 2 })
-  })
+        expect(listener).toHaveBeenCalledTimes(1)
+        expect(listener).toHaveBeenCalledWith({ count: 2 })
+    })
 
-  it('extends store instances with plugin surfaces in order', () => {
-    const definition = createStore({ count: 0 })
-      .extend(() => ({ first: 'first' as const }))
-      .extend(({ store }) => ({
-        second: `${store.first}-second` as const,
-      }))
+    it('extends store instances with plugin surfaces in order', () => {
+        const definition = createStore({ count: 0 })
+            .extend(() => ({ first: 'first' as const }))
+            .extend(({ store }) => ({
+                second: `${store.first}-second` as const,
+            }))
 
-    const store = definition.create()
+        const store = definition.create()
 
-    expect(store.first).toBe('first')
-    expect(store.second).toBe('first-second')
-  })
+        expect(store.first).toBe('first')
+        expect(store.second).toBe('first-second')
+    })
 
-  it('lets plugins update state through the store instance', () => {
-    const definition = createStore(0).extend(({ store }) => ({
-      increment() {
-        store.setState((prev) => prev + 1)
-      },
-      reset() {
-        store.setState(() => 1)
-      },
-    }))
+    it('lets plugins update state through the store instance', () => {
+        const definition = createStore(0).extend(({ store }) => ({
+            increment() {
+                store.setState((prev) => prev + 1)
+            },
+            reset() {
+                store.setState(() => 1)
+            },
+        }))
 
-    const store = definition.create()
+        const store = definition.create()
 
-    store.increment()
-    expect(store.get()).toBe(1)
+        store.increment()
+        expect(store.get()).toBe(1)
 
-    store.increment()
-    expect(store.get()).toBe(2)
+        store.increment()
+        expect(store.get()).toBe(2)
 
-    store.reset()
-    expect(store.get()).toBe(1)
-  })
+        store.reset()
+        expect(store.get()).toBe(1)
+    })
 
-  it('runs dispose handlers in reverse registration order and only once', async () => {
-    const calls: string[] = []
+    it('runs dispose handlers in reverse registration order and only once', async () => {
+        const calls: string[] = []
 
-    const definition = createStore({ count: 0 })
-      .extend(({ onDispose }) => {
-        onDispose(() => {
-          calls.push('first')
-        })
-        return {}
-      })
-      .extend(({ onDispose }) => {
-        onDispose(() => {
-          calls.push('second')
-        })
-        return {}
-      })
+        const definition = createStore({ count: 0 })
+            .extend(({ onDispose }) => {
+                onDispose(() => {
+                    calls.push('first')
+                })
+                return {}
+            })
+            .extend(({ onDispose }) => {
+                onDispose(() => {
+                    calls.push('second')
+                })
+                return {}
+            })
 
-    const store = definition.create()
+        const store = definition.create()
 
-    await store.dispose()
-    await store.dispose()
+        await store.dispose()
+        await store.dispose()
 
-    expect(calls).toEqual(['second', 'first'])
-  })
+        expect(calls).toEqual(['second', 'first'])
+    })
 })
 
 describe('createStore — initialState override', () => {
-  it('creates a store seeded with the override state', () => {
-    const builder = createStore({ count: 0 })
-    const store = builder.create({ count: 42 })
-    expect(store.get().count).toBe(42)
-  })
+    it('creates a store seeded with the override state', () => {
+        const builder = createStore({ count: 0 })
+        const store = builder.create({ count: 42 })
+        expect(store.get().count).toBe(42)
+    })
 
-  it('falls back to the builder default when no override is provided', () => {
-    const builder = createStore({ count: 0 })
-    const store = builder.create()
-    expect(store.get().count).toBe(0)
-  })
+    it('falls back to the builder default when no override is provided', () => {
+        const builder = createStore({ count: 0 })
+        const store = builder.create()
+        expect(store.get().count).toBe(0)
+    })
 
-  it('does not affect the builder default for future create calls', () => {
-    const builder = createStore({ count: 0 })
-    builder.create({ count: 99 })
-    const store2 = builder.create()
-    expect(store2.get().count).toBe(0)
-  })
+    it('does not affect the builder default for future create calls', () => {
+        const builder = createStore({ count: 0 })
+        builder.create({ count: 99 })
+        const store2 = builder.create()
+        expect(store2.get().count).toBe(0)
+    })
 })

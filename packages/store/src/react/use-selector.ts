@@ -10,17 +10,17 @@ import type { Store, StoreState } from '../core'
  * selection through context, use {@link useStoreSelector}.
  */
 export function useSelector<
-  TStore extends Store<any, any>,
-  TSelected,
-  TState extends StoreState<TStore>,
+    TStore extends Store<any, any>,
+    TSelected,
+    TState extends StoreState<TStore>,
 >(
-  store: TStore,
-  selector: (snapshot: TState) => TSelected,
-  compare?: (a: TSelected, b: TSelected) => boolean,
+    store: TStore,
+    selector: (snapshot: TState) => TSelected,
+    compare?: (a: TSelected, b: TSelected) => boolean
 ): TSelected {
-  return useTanStackStore<BaseStore<TState>, TSelected>(
-    store as BaseStore<TState>,
-    selector,
-    compare,
-  )
+    return useTanStackStore<BaseStore<TState>, TSelected>(
+        store as BaseStore<TState>,
+        selector,
+        compare
+    )
 }

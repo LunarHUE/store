@@ -1,9 +1,10 @@
 import type { Metadata } from 'next'
 import { Fraunces, IBM_Plex_Sans } from 'next/font/google'
+import Script from 'next/script'
+
+import { cn } from '@/lib/utils'
 
 import './globals.css'
-import { cn } from '@/lib/utils'
-import Script from 'next/script'
 
 const bodyFont = IBM_Plex_Sans({
   subsets: ['latin'],

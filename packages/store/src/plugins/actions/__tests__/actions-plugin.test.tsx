@@ -1,10 +1,8 @@
 // @vitest-environment jsdom
-
 import { fireEvent, render, screen } from '@testing-library/react'
 import { describe, expect, it } from 'vitest'
 
 import { createStore } from '../../../core'
-
 import { actions, createAction } from '../plugin'
 import { useActions } from '../react'
 
@@ -16,7 +14,7 @@ describe('actions plugin', () => {
           const current = getState().count
           setState(() => ({ count: current + 1 }))
         },
-      })),
+      }))
     )
 
     const store = builder.create()
@@ -33,7 +31,7 @@ describe('actions plugin', () => {
         setValue(value: string) {
           setState((prev) => (prev.value === value ? prev : { value }))
         },
-      })),
+      }))
     )
 
     const store = builder.create()
@@ -53,7 +51,7 @@ describe('actions plugin', () => {
             count: 1,
           }
         },
-      })),
+      }))
     )
 
     const store = builder.create()
@@ -72,13 +70,13 @@ describe('actions plugin', () => {
         setState((prev) => ({
           count: prev.count + value,
         }))
-      },
+      }
     )
 
     const builder = createStore<CounterState>({ count: 0 }).extend(
       actions(() => ({
         add,
-      })),
+      }))
     )
 
     const store = builder.create()
@@ -96,7 +94,7 @@ describe('actions plugin', () => {
         setState((prev) => ({
           count: prev.count + value,
         }))
-      },
+      }
     )
 
     const builder = createStore<CounterState>({ count: 1 }).extend(
@@ -106,7 +104,7 @@ describe('actions plugin', () => {
           const nextCount = getState().count > 0 ? 0 : getState().count
           setState(() => ({ count: nextCount }))
         },
-      })),
+      }))
     )
 
     const store = builder.create()
@@ -124,7 +122,7 @@ describe('actions plugin', () => {
         increment() {
           setState((prev) => ({ count: prev.count + 1 }))
         },
-      })),
+      }))
     )
 
     const store = builder.create()

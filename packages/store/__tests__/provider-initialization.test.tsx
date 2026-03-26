@@ -1,5 +1,4 @@
 // @vitest-environment jsdom
-
 import { cleanup, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
@@ -29,7 +28,7 @@ describe('StoreProvider initialization', () => {
         expect(store.lifecycle.meta.get().status).toBe('initializing')
         await loadGate
         return { count: 5 }
-      },
+      }
     )
 
     function Probe() {
@@ -40,7 +39,7 @@ describe('StoreProvider initialization', () => {
     render(
       <StoreProvider builder={builder} loadInitialState={loadInitialState}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.queryByText('5')).toBeNull()
@@ -64,7 +63,7 @@ describe('StoreProvider initialization', () => {
     render(
       <StoreProvider builder={builder} initialState={{ count: 2 }}>
         <Probe />
-      </StoreProvider>,
+      </StoreProvider>
     )
 
     expect(screen.getByText('2')).toBeTruthy()
@@ -82,10 +81,10 @@ describe('StoreProvider initialization', () => {
       render(
         <StoreProvider builder={builder}>
           <Probe />
-        </StoreProvider>,
-      ),
+        </StoreProvider>
+      )
     ).toThrow(
-      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.',
+      'StoreProvider requires initialState or loadInitialState when the builder has no declared initial state.'
     )
   })
 })

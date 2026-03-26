@@ -1,14 +1,13 @@
 // @vitest-environment jsdom
-
 import { act, cleanup, render, screen } from '@testing-library/react'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-import { renderToString } from 'react-dom/server'
 import { hydrateRoot } from 'react-dom/client'
+import { renderToString } from 'react-dom/server'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 import { createStore } from '../src/core'
-import { useStoreSelector } from '../src/react'
 import { persist } from '../src/plugins/persist/plugin'
 import { PersistStoreProvider } from '../src/plugins/persist/react'
+import { useStoreSelector } from '../src/react'
 
 describe('PersistStoreProvider — initialState wiring', () => {
   afterEach(() => {
@@ -32,7 +31,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('42')).toBeTruthy()
@@ -54,7 +53,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(screen.getByText('0')).toBeTruthy()
@@ -64,7 +63,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
 
     function Probe() {
@@ -82,7 +81,7 @@ describe('PersistStoreProvider — initialState wiring', () => {
         persist={{}}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(await screen.findByText('42')).toBeTruthy()
@@ -112,8 +111,8 @@ describe('PersistStoreProvider — SSR', () => {
           }}
         >
           <Probe />
-        </PersistStoreProvider>,
-      ),
+        </PersistStoreProvider>
+      )
     ).not.toThrow()
   })
 
@@ -121,7 +120,7 @@ describe('PersistStoreProvider — SSR', () => {
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
     const loadInitialState = vi.fn(async () => ({ count: 1 }))
 
@@ -132,7 +131,7 @@ describe('PersistStoreProvider — SSR', () => {
         persist={{}}
       >
         <div>probe</div>
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(loadInitialState).not.toHaveBeenCalled()
@@ -155,7 +154,7 @@ describe('PersistStoreProvider — SSR', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(html).toContain('42')
@@ -178,7 +177,7 @@ describe('PersistStoreProvider — SSR', () => {
         }}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     const container = document.createElement('div')
@@ -197,7 +196,7 @@ describe('PersistStoreProvider — SSR', () => {
           }}
         >
           <Probe />
-        </PersistStoreProvider>,
+        </PersistStoreProvider>
       )
     })
 

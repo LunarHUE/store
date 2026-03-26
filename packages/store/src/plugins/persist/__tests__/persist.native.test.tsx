@@ -1,14 +1,12 @@
 import { afterAll, afterEach, describe, expect, it, jest } from '@jest/globals'
-
 import { act, renderAsync, waitFor } from '@testing-library/react-native'
 import { Text } from 'react-native'
 
-import { createStore, type StoreDebugEvent } from '../../../core'
+import { type StoreDebugEvent, createStore } from '../../../core'
 import { useSelector, useStore, useStoreSelector } from '../../../react'
-
 import { persist } from '../plugin'
-import type { PersistPersistArgs } from '../types'
 import { PersistStoreProvider, usePersistentStore } from '../react'
+import type { PersistPersistArgs } from '../types'
 
 type MockAppStateStatus = 'active' | 'inactive' | 'background'
 
@@ -23,7 +21,7 @@ const mockAppState = {
       return {
         remove: mockAppStateRemove,
       }
-    },
+    }
   ),
 }
 
@@ -64,12 +62,12 @@ describe('persist react bindings (native renderer)', () => {
 
   it('composes PersistStoreProvider with a non-DOM renderer', async () => {
     const onPersist = jest.fn(
-      async (_args: PersistPersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {}
     )
     const builder = createStore<{ count: number }>().extend(
       persist({
         onPersist,
-      }),
+      })
     )
     const snapshots: string[] = []
 
@@ -93,7 +91,7 @@ describe('persist react bindings (native renderer)', () => {
         persist={{}}
       >
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(snapshots.at(-1)).toBe('4:idle')
@@ -105,7 +103,7 @@ describe('persist react bindings (native renderer)', () => {
     const builder = createStore({ count: 2 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
     const store = builder.create()
     const snapshots: string[] = []
@@ -123,7 +121,7 @@ describe('persist react bindings (native renderer)', () => {
     const result = await renderAsync(
       <PersistStoreProvider store={store} persist={{}}>
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(snapshots.at(-1)).toBe('idle:2')
@@ -133,7 +131,7 @@ describe('persist react bindings (native renderer)', () => {
 
   it('flushes pending work on unmount without browser APIs', async () => {
     const onPersist = jest.fn(
-      async (_args: PersistPersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {}
     )
     const builder = createStore({ count: 0 }).extend(persist())
     let runtimeStore!: ReturnType<typeof builder.create>
@@ -152,7 +150,7 @@ describe('persist react bindings (native renderer)', () => {
           runtimeStore = store
           return <Text>mounted</Text>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -172,7 +170,7 @@ describe('persist react bindings (native renderer)', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
     const snapshots: number[] = []
 
@@ -185,7 +183,7 @@ describe('persist react bindings (native renderer)', () => {
     const result = await renderAsync(
       <PersistStoreProvider builder={builder} flushOnPageHide persist={{}}>
         <Probe />
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(snapshots.at(-1)).toBe(0)
@@ -195,7 +193,7 @@ describe('persist react bindings (native renderer)', () => {
 
   it('flushes queued work when the app backgrounds via React Native AppState', async () => {
     const onPersist = jest.fn(
-      async (_args: PersistPersistArgs<{ count: number }>) => {},
+      async (_args: PersistPersistArgs<{ count: number }>) => {}
     )
     const builder = createStore({ count: 0 }).extend(persist())
     let runtimeStore!: ReturnType<typeof builder.create>
@@ -214,7 +212,7 @@ describe('persist react bindings (native renderer)', () => {
           runtimeStore = store
           return <Text>mounted</Text>
         }}
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     act(() => {
@@ -248,7 +246,7 @@ describe('persist react bindings (native renderer)', () => {
     const builder = createStore({ count: 0 }).extend(
       persist({
         onPersist: async () => {},
-      }),
+      })
     )
 
     const result = await renderAsync(
@@ -264,11 +262,11 @@ describe('persist react bindings (native renderer)', () => {
         persist={{}}
       >
         <Text>mounted</Text>
-      </PersistStoreProvider>,
+      </PersistStoreProvider>
     )
 
     expect(events.some((event) => event.event === 'persist.connected')).toBe(
-      true,
+      true
     )
 
     await result.unmountAsync()
