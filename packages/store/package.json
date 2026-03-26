@@ -53,6 +53,7 @@
     "test:web": "vitest run",
     "test:native": "jest --config ./jest.native.config.cjs",
     "typecheck": "tsc --noEmit",
+    "format:check": "prettier --check .",
     "check": "bun run typecheck && bun run test && bun run contract"
   },
   "dependencies": {
