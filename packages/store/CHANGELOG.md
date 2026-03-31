@@ -1,5 +1,11 @@
 # @lunarhue/store
 
+## 0.5.0
+
+### Minor Changes
+
+- [#67](https://github.com/LunarHUE/store/pull/67) [`d1af3ea`](https://github.com/LunarHUE/store/commit/d1af3ea5497cd5be8212140bc5e6b7152838552b) Thanks [@Legonois](https://github.com/Legonois)! - Fixed react native issue, where window was being used without a web guard
+
 ## 0.4.1
 
 ### Patch Changes
