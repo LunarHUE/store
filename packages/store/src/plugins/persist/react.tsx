@@ -305,12 +305,7 @@ function usePersistenceBoundary<TState>(
   }, [flushOnUnmount, store])
 
   useEffect(() => {
-    if (
-      !flushOnPageHide ||
-      typeof window === 'undefined' ||
-      typeof window.addEventListener !== 'function' ||
-      !('onpagehide' in window)
-    ) {
+    if (!flushOnPageHide || typeof window === 'undefined') {
       return
     }
 
