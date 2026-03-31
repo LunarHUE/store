@@ -16,7 +16,7 @@
     },
     "examples/nextjs": {
       "name": "@lunarhue/store-example-nextjs",
-      "version": "0.1.4",
+      "version": "0.1.5",
       "dependencies": {
         "@lunarhue/store": "workspace:*",
         "class-variance-authority": "^0.7.1",
@@ -43,7 +43,7 @@
     },
     "packages/store": {
       "name": "@lunarhue/store",
-      "version": "0.4.0",
+      "version": "0.4.1",
       "dependencies": {
         "@tanstack/react-store": "0.9.2",
         "@tanstack/store": "0.9.2",
